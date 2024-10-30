@@ -1,5 +1,6 @@
 local utils = {}
 local random = math.random
+
 function utils.uuid()
   local template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
   return string.gsub(template, '[xy]', function(c)
