@@ -51,11 +51,7 @@ end
 
 M.Store = {}
 
-function M.Store:write()
-  local title = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
-  local body = vim.api.nvim_buf_get_lines(0, 2, -1, false)
-  local task = M.Task:new(title, body)
-
+function M.Store:get_or_create_tasko_directory()
   -- `~/.config/share/nvim` on unix
   local data_dir = vim.fn.stdpath("data")
   if (type(data_dir) == "table") then
@@ -66,8 +62,19 @@ function M.Store:write()
   if (not tasko_dir_path:exists()) then
     tasko_dir_path:mkdir()
   end
+  return tasko_dir
+end
+
+function M.Store:write()
+  local task = M.Task:from_file()
+  if (not task) then
+    print('nothing written, no task identified')
+    return
+  end
+  local tasko_dir = self:get_or_create_tasko_directory()
   local target_file = vim.fs.joinpath(tasko_dir, task.id .. ".md")
   Path:new(target_file):write(task:__to_string(), "w")
+  return target_file
 end
 
 function M.setup(opts)
