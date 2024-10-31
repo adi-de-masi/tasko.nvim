@@ -77,6 +77,20 @@ function M.Store:write()
   return target_file
 end
 
+function M.Store:read_all()
+  print('read_all')
+  local tasko_dir = self:get_or_create_tasko_directory()
+  local result = {}
+  local i = 1
+  for dir in io.popen("ls -pa " .. tasko_dir .. "  | grep -v /"):lines()
+  do
+    print(dir)
+    result[i] = dir
+    i = i + 1
+  end
+  return result
+end
+
 function M.setup(opts)
   opts = opts or {}
 
