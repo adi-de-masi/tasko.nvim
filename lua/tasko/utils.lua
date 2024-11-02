@@ -9,19 +9,4 @@ function utils.uuid()
   end)
 end
 
-function utils.dump(o)
-  if type(o) == 'table' then
-    local s = '{ '
-    for k, v in pairs(o) do
-      if type(k) ~= 'number' then k = '"' .. k .. '"' end
-      s = s .. '[' .. k .. '] = ' .. utils.dump(v) .. ','
-    end
-    return s .. '} '
-  elseif type(o) == 'string' then
-    return ("%q"):format(o)
-  else
-    return tostring(o)
-  end
-end
-
 return utils

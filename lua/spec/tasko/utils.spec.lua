@@ -35,34 +35,34 @@ As many as you wish, actually.
     assert(file:exists())
     file:rm()
   end)
+end)
 
+describe('listing tasks', function()
   it('reads all tasks from the tasko directory', function()
     vim.fn.execute('edit lua/spec/tasko/test_task.md', false)
-    local file_name_regex = '.*%/(.*%.md)$'
-    local file_path_1 = Store:write()
-    local _, _, file_name_1 = string.find(file_path_1, file_name_regex)
-    local file_path_2 = Store:write()
-    local _, _, file_name_2 = string.find(file_path_2, file_name_regex)
-    local file_path_3 = Store:write()
-    local _, _, file_name_3 = string.find(file_path_3, file_name_regex)
+    vim.api.nvim_buf_set_lines(0, 14, 15, false, { '1234-1' })
+    Store:write()
+    vim.api.nvim_buf_set_lines(0, 14, 15, false, { '1234-2' })
+    Store:write()
+    vim.api.nvim_buf_set_lines(0, 14, 15, false, { '1234-3' })
+    Store:write()
     local found = {}
     found[1] = false
     found[2] = false
     found[3] = false
 
-    local dir_content = Store:read_all()
-    for _, file_path in ipairs(dir_content) do
-      if (file_name_1 == file_path) then
+    for _, file_path in ipairs(Store:read_all()) do
+      if ('1234-1.md' == file_path) then
         found[1] = true
-      elseif (file_name_2 == file_path) then
+      elseif ('1234-2.md' == file_path) then
         found[2] = true
-      elseif (file_name_3 == file_path) then
+      elseif ('1234-3.md' == file_path) then
         found[3] = true
       end
     end
     assert(found[1] and found[2] and found[3], 'Not all files were found')
-    Path:new(file_path_1):rm()
-    Path:new(file_path_2):rm()
-    Path:new(file_path_3):rm()
+    Store:delete('1234-1')
+    Store:delete('1234-2')
+    Store:delete('1234-3')
   end)
 end)
