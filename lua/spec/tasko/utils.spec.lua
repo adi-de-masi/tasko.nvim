@@ -3,16 +3,29 @@ local Task = require('tasko').Task
 local Store = require('tasko').Store
 describe('text to task', function()
   it('Creates a task', function()
-    local task = Task:new("This is my test Task", "This is the body of my test task")
+    local task = Task:new(nil, "This is my test Task", "This is the body of my test task")
     assert(task.title == "This is my test Task", "Title couldn't be parsed.")
+    assert.is_not_nil(task.id)
   end)
 
   it('converts a markdown file to a task', function()
     -- loads test file into buffer 1
     vim.fn.execute('edit lua/spec/tasko/test_task.md', false)
     local task = Task:from_file()
+    local expected_title = "This is my test Task"
 
-    assert(task.title == "This is my test Task", "Title couldn't be parsed." .. task.title)
+    assert(task.title == expected_title, "Title couldn't be parsed. '" .. task.title .. "'")
+    local expected_body = [[
+
+
+It has a simple body.
+That even may consist of multiple lines.
+
+As many as you wish, actually.
+
+]]
+    assert(task.body == expected_body, "Body couldn't be parsed.")
+    assert(task.id == '12345', "Id couldn't be parsed.")
   end)
 
   it('writes a markdown file to a task', function()
