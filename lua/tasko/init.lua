@@ -3,16 +3,13 @@ local utils = require '../tasko/utils'
 local Path = require 'plenary.path'
 
 M.Task = {}
-function M.Task:new(title, body)
+function M.Task:new(id, title, body)
   local o = {}
   setmetatable(o, self)
   self.__index = self
-  o.id = utils.uuid()
-  o.title = title
-  o.body = body
-  o.__to_string = function()
-    return utils.dump(o)
-  end
+  o.id = id or utils.uuid()
+  o.title = title or ''
+  o.body = body or ''
   return o
 end
 
