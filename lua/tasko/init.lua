@@ -13,34 +13,38 @@ function M.Task:new(id, title, body)
   return o
 end
 
-function M.Task:from_file()
+function M.Task:from_file(buf_or_string)
+  local lines;
+  if (buf_or_string ~= nil
+        and type(buf_or_string == 'string')
+        and buf_or_string ~= '') then
+    lines = vim.split(buf_or_string, '\n')
+  else
+    local buffer = buf_or_string or vim.api.nvim_get_current_buf()
+    lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
+  end
+
   --[[
-    Our delimiter is a markdown comment like so
-    `[//]: # (title)`
-    --]]
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  Our delimiter is a markdown comment like so
+  `[//]: # (title)`
+  --]]
   local delimiter_regex = '^%s*(%[//%]: #)%s*%((.*)%)'
   local task = M.Task:new()
-  local readingBody = false
-  for i, line in ipairs(lines) do
+  local current_column = nil
+  for _, line in ipairs(lines) do
     local _, _, delimiter, column = string.find(line, delimiter_regex)
     if delimiter then
-      if (column == 'title') then
-        local title = lines[i + 1]
-        if (title == nil or title == '') then
-          print('Title cannot be empty')
-          return
-        else
-          task.title = string.gsub(title, '^#%s*', '')
-        end
-      elseif (column == 'body') then
-        readingBody = true
-        task.body = ''
+      current_column = column
+    elseif (current_column ~= nil) then
+      local empty_captures = not string.match(line, '^%s*$')
+      local value = string.gsub(line, '^#%s*', '')
+      if (value ~= ''
+            and (current_column == 'title' or current_column == 'id')
+            and empty_captures ~= nil) then
+        task[current_column] = value
+      elseif (current_column ~= 'title' and current_column ~= 'id') then
+        task[current_column] = task[current_column] .. value .. '\n'
       end
-      -- print('field: ' .. column)
-    end
-    if readingBody then
-      task.body = task.body .. line .. '\n'
     end
   end
   return task
@@ -70,35 +74,37 @@ function M.Store:write()
   end
   local tasko_dir = self:get_or_create_tasko_directory()
   local target_file = vim.fs.joinpath(tasko_dir, task.id .. ".md")
-  Path:new(target_file):write(task:__to_string(), "w")
+  local content = table.concat(
+    vim.api.nvim_buf_get_lines(
+      vim.api.nvim_get_current_buf(), 0, -1, false),
+    '\n')
+  Path:new(target_file):write(content, "w")
   return target_file
 end
 
+function M.Store:delete(task_id)
+  local base_dir = self:get_or_create_tasko_directory()
+  local file_path = vim.fs.joinpath(base_dir, task_id .. ".md")
+  return Path:new(file_path):rm()
+end
+
+function M.Store:read(file_name)
+  local tasko_dir = self:get_or_create_tasko_directory()
+  local target_file = vim.fs.joinpath(tasko_dir, file_name)
+  local file = Path:new(target_file):read()
+  return M.Task:from_file(file)
+end
+
 function M.Store:read_all()
-  print('read_all')
   local tasko_dir = self:get_or_create_tasko_directory()
   local result = {}
   local i = 1
   for dir in io.popen("ls -pa " .. tasko_dir .. "  | grep -v /"):lines()
   do
-    print(dir)
     result[i] = dir
     i = i + 1
   end
   return result
-end
-
-function M.setup(opts)
-  opts = opts or {}
-
-  -- TODO: Remove thish
-  vim.keymap.set("n", "<Leader>T", function()
-    if opts.name then
-      print("hello, " .. opts.name)
-    else
-      print("hello")
-    end
-  end)
 end
 
 return M
