@@ -95,11 +95,11 @@ function M.Store:read(file_name)
   return M.Task:from_file(file)
 end
 
-function M.Store:read_all()
+function M.Store:list_tasks(task_list_filename)
   local tasko_dir = self:get_or_create_tasko_directory()
   local result = {}
   local i = 1
-  for dir in io.popen("ls -pa " .. tasko_dir .. "  | grep -v /"):lines()
+  for dir in io.popen("ls -pa " .. tasko_dir .. "  | grep -v / | grep -v \"" .. string.gsub(task_list_filename, "*", "\\*") .. "\""):lines()
   do
     result[i] = dir
     i = i + 1
@@ -107,4 +107,5 @@ function M.Store:read_all()
   return result
 end
 
+M.Utils = utils
 return M
