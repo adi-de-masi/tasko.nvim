@@ -38,12 +38,11 @@ function M.Task:from_file(buf_or_string)
     elseif (current_column ~= nil) then
       local empty_captures = not string.match(line, '^%s*$')
       local value = string.gsub(line, '^#%s*', '')
-      if (value ~= ''
-            and (current_column == 'title' or current_column == 'id')
-            and empty_captures ~= nil) then
-        task[current_column] = value
-      elseif (current_column ~= 'title' and current_column ~= 'id') then
+      if (current_column == 'body') then
+        -- the only place where we accept blank lines
         task[current_column] = task[current_column] .. value .. '\n'
+      elseif (value ~= '' and empty_captures ~= nil) then
+        task[current_column] = value
       end
     end
   end
