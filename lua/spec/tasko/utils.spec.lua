@@ -10,7 +10,7 @@ describe('text to task', function()
     assert.is_not_nil(task.id)
   end)
 
-  it('converts a markdown file to a task', function()
+  it('converts an open markdown file to a task', function()
     -- loads test file into buffer 1
     vim.fn.execute('edit lua/spec/tasko/test_task.md', false)
     local task = Task:from_file()
@@ -28,6 +28,12 @@ As many as you wish, actually.
 ]]
     assert(task.body == expected_body, "Body couldn't be parsed.")
     assert(task.id == '12345', "Id couldn't be parsed.")
+  end)
+
+  it('converts a markdown file with the done comment to a task', function()
+    vim.fn.execute('edit lua/spec/tasko/test_done_task.md', false)
+    local task = Task:from_file()
+    assert(task.done ~= nil, "Task not marked as done")
   end)
 
   it('writes a markdown file to a task', function()

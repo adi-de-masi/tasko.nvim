@@ -29,7 +29,12 @@ vim.api.nvim_create_user_command("TaskoList", function()
     local task = require('tasko').Task:from_file(task_file_content)
     local escaped_task_id = string.gsub(task.id, "%-", "%%-")
     if (not utils.does_buf_contain_pattern(buf, escaped_task_id)) then
-      local task_line = string.format("[%s](%s/%s.md)", task.title, base_dir, task.id)
+      local task_line
+      if (task.done ~= nil) then
+        task_line = string.format("DONE: [%s](%s/%s.md)", task.title, base_dir, task.id)
+      else
+        task_line = string.format("[%s](%s/%s.md)", task.title, base_dir, task.id)
+      end
       vim.api.nvim_buf_call(buf, function()
         vim.api.nvim_put({ task_line }, 'l', false, false)
       end)
@@ -52,4 +57,16 @@ vim.api.nvim_create_user_command("TaskoNew", function()
   end)
   vim.api.nvim_set_current_buf(buf)
   vim.fn.execute('set ft=markdown')
+end, {})
+
+
+vim.api.nvim_create_user_command("TaskoDone", function()
+  local current_buf = vim.api.nvim_get_current_buf()
+  local now = os.date("!%Y-%m-%dT%TZ")
+  if (type(now) == "string") then
+    print('now is ' .. now)
+    vim.api.nvim_buf_call(current_buf, function()
+      vim.api.nvim_buf_set_lines(current_buf, -1, -1, true, { '[//]: # (done)', now })
+    end)
+  end
 end, {})
