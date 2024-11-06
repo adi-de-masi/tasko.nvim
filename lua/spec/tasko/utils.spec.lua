@@ -112,3 +112,19 @@ describe("line_number_of", function()
     assert.is_nil(utils.line_number_of(buf, "Eiche"))
   end)
 end)
+
+describe("replace_line", function()
+  it('replaces a line in a buffer', function()
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+      "Birnenbaum",
+      "Apfelbaum",
+      "Kastanienbaum",
+      "Eiche"
+    })
+    utils.replace_line(buf, 2, "Apfelbaum 2")
+    assert.is_equal("Apfelbaum 2", vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1])
+    utils.replace_line(buf, 4, "Eiche 2")
+    assert.is_equal("Eiche 2", vim.api.nvim_buf_get_lines(buf, 3, 4, false)[1])
+  end)
+end)

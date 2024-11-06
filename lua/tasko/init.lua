@@ -13,6 +13,15 @@ function M.Task:new(id, title, body)
   return o
 end
 
+function M.Task:to_task_list_line(task)
+  local base_dir = M.Store:get_or_create_tasko_directory()
+  if (task.done ~= nil) then
+    return string.format("DONE: [%s](%s/%s.md)", task.title, base_dir, task.id)
+  else
+    return string.format("[%s](%s/%s.md)", task.title, base_dir, task.id)
+  end
+end
+
 function M.Task:from_current_buffer()
   return M.Task:from_buffer(vim.api.nvim_get_current_buf())
 end
