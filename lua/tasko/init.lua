@@ -73,7 +73,7 @@ function M.Store:get_or_create_tasko_directory()
   return tasko_dir
 end
 
-function M.Store:write()
+function M.Store:write_task()
   local task = M.Task:from_current_buffer()
   if (not task) then
     print('nothing written, no task identified')
