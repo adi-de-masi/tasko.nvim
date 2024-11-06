@@ -24,14 +24,14 @@ function utils.get_buf_by_pattern(pattern)
   return buf
 end
 
-function utils.does_buf_contain_pattern(buf, pattern)
+function utils.line_number_of(buf, pattern)
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  for _, line in ipairs(lines) do
+  for line_number, line in ipairs(lines) do
     if (string.find(line, pattern)) then
-      return true
+      return line_number
     end
   end
-  return false
+  return nil
 end
 
 return utils

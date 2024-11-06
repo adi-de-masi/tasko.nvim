@@ -96,8 +96,8 @@ describe('get_buf_by_pattern', function()
   end)
 end)
 
-describe("does_buf_contain_pattern", function()
-  it('finds file content by pattern', function()
+describe("line_number_of", function()
+  it('finds first line of pattern in a buffer', function()
     local buf = vim.api.nvim_create_buf(true, false)
     local md_comment = "[Pimmelpammel](/home/dmad/.local/share/nvim/tasko/a88454fe-5d50-4586-9173-161af7a3dc7e.md)"
     local escaped = "a88454fe%-5d50%-4586%-9173%-161af7a3dc7e"
@@ -107,8 +107,8 @@ describe("does_buf_contain_pattern", function()
       "Kastanienbaum",
       md_comment
     })
-    assert.is_true(utils.does_buf_contain_pattern(buf, "Apfelbaum"))
-    assert.is_true(utils.does_buf_contain_pattern(buf, escaped))
-    assert.is_false(utils.does_buf_contain_pattern(buf, "Eiche"))
+    assert.is_equal(2, utils.line_number_of(buf, "Apfelbaum"))
+    assert.is_equal(4, utils.line_number_of(buf, escaped))
+    assert.is_nil(utils.line_number_of(buf, "Eiche"))
   end)
 end)
