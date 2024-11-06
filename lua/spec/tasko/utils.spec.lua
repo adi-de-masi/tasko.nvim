@@ -13,7 +13,7 @@ describe('text to task', function()
   it('converts an open markdown file to a task', function()
     -- loads test file into buffer 1
     vim.fn.execute('edit lua/spec/tasko/test_task.md', false)
-    local task = Task:from_file()
+    local task = Task:from_current_buffer()
     local expected_title = "This is my test Task"
 
     assert(task.title == expected_title, "Title couldn't be parsed. '" .. task.title .. "'")
@@ -32,7 +32,7 @@ As many as you wish, actually.
 
   it('converts a markdown file with the done comment to a task', function()
     vim.fn.execute('edit lua/spec/tasko/test_done_task.md', false)
-    local task = Task:from_file()
+    local task = Task:from_current_buffer()
     assert(task.done ~= nil, "Task not marked as done")
   end)
 

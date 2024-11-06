@@ -13,17 +13,16 @@ function M.Task:new(id, title, body)
   return o
 end
 
-function M.Task:from_file(buf_or_string)
-  local lines;
-  if (buf_or_string ~= nil
-        and type(buf_or_string == 'string')
-        and buf_or_string ~= '') then
-    lines = vim.split(buf_or_string, '\n')
-  else
-    local buffer = buf_or_string or vim.api.nvim_get_current_buf()
-    lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
-  end
+function M.Task:from_current_buffer()
+  return M.Task:from_buffer(vim.api.nvim_get_current_buf())
+end
 
+function M.Task:from_buffer(buf)
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  return M.Task:from_lines(lines)
+end
+
+function M.Task:from_lines(lines)
   --[[
   Our delimiter is a markdown comment like so
   `[//]: # (title)`
@@ -66,7 +65,7 @@ function M.Store:get_or_create_tasko_directory()
 end
 
 function M.Store:write()
-  local task = M.Task:from_file()
+  local task = M.Task:from_current_buffer()
   if (not task) then
     print('nothing written, no task identified')
     return
@@ -91,7 +90,7 @@ function M.Store:read(file_name)
   local tasko_dir = self:get_or_create_tasko_directory()
   local target_file = vim.fs.joinpath(tasko_dir, file_name)
   local file = Path:new(target_file):read()
-  return M.Task:from_file(file)
+  return M.Task:from_lines(file)
 end
 
 function M.Store:list_tasks(task_list_filename)
