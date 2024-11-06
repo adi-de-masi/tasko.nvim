@@ -4,6 +4,24 @@ local base_dir = Store:get_or_create_tasko_directory()
 local task_list_filename = "*tasks*.md"
 local utils = require('tasko').Utils
 
+local function to_task_list_line(task)
+  if (task.done ~= nil) then
+    return string.format("DONE: [%s](%s/%s.md)", task.title, base_dir, task.id)
+  else
+    return string.format("[%s](%s/%s.md)", task.title, base_dir, task.id)
+  end
+end
+
+local function replace_line(buf, line_number, new_line)
+  vim.api.nvim_buf_call(buf, function()
+    if (line_number >= 0) then
+      vim.api.nvim_win_set_cursor(0, { line_number, 0 })
+      vim.api.nvim_del_current_line()
+    end
+    vim.api.nvim_put({ new_line }, 'l', true, false)
+  end)
+end
+
 vim.api.nvim_create_user_command("TaskoList", function()
   -- Task List is already open
   local buf = utils.get_buf_by_pattern("%*tasks%*.md")
@@ -28,16 +46,12 @@ vim.api.nvim_create_user_command("TaskoList", function()
     local task_file_content = Path:new(vim.fs.joinpath(base_dir, task_file)):read()
     local task = require('tasko').Task:from_file(task_file_content)
     local escaped_task_id = string.gsub(task.id, "%-", "%%-")
-    if (not utils.does_buf_contain_pattern(buf, escaped_task_id)) then
-      local task_line
-      if (task.done ~= nil) then
-        task_line = string.format("DONE: [%s](%s/%s.md)", task.title, base_dir, task.id)
-      else
-        task_line = string.format("[%s](%s/%s.md)", task.title, base_dir, task.id)
-      end
-      vim.api.nvim_buf_call(buf, function()
-        vim.api.nvim_put({ task_line }, 'l', false, false)
-      end)
+    local line_number_in_task_list = utils.line_number_of(buf, escaped_task_id)
+    local task_line = to_task_list_line(task)
+    if (line_number_in_task_list ~= nil) then
+      replace_line(buf, line_number_in_task_list, task_line)
+    else
+      replace_line(buf, -1, task_line)
     end
   end
   vim.api.nvim_set_current_buf(buf)
