@@ -43,8 +43,8 @@ vim.api.nvim_create_user_command("TaskoList", function()
 
   local task_list = require('tasko').Store:list_tasks(task_list_filename)
   for _, task_file in ipairs(task_list) do
-    local task_file_content = Path:new(vim.fs.joinpath(base_dir, task_file)):read()
-    local task = require('tasko').Task:from_file(task_file_content)
+    local task_lines = Path:new(vim.fs.joinpath(base_dir, task_file)):read()
+    local task = require('tasko').Task:from_lines(task_lines)
     local escaped_task_id = string.gsub(task.id, "%-", "%%-")
     local line_number_in_task_list = utils.line_number_of(buf, escaped_task_id)
     local task_line = to_task_list_line(task)
