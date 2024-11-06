@@ -1,5 +1,5 @@
-local M = {}
 local utils = require '../tasko/utils'
+local M = {}
 local Path = require 'plenary.path'
 local task_list_filename = "*tasks*.md"
 local function get_or_create_tasko_directory()
@@ -26,15 +26,14 @@ function M.Task:new(id, title, body)
   o.id = id or utils.uuid()
   o.title = title or ''
   o.body = body or ''
-  return o
-end
-
-function M.Task:to_task_list_line(task)
-  if (task.done ~= nil) then
-    return string.format("DONE: [%s](%s/%s.md)", task.title, base_dir, task.id)
-  else
-    return string.format("[%s](%s/%s.md)", task.title, base_dir, task.id)
+  o.to_task_list_line = function()
+    if (o.done ~= nil) then
+      return string.format("DONE: [%s](%s/%s.md)", o.title, base_dir, o.id)
+    else
+      return string.format("[%s](%s/%s.md)", o.title, base_dir, o.id)
+    end
   end
+  return o
 end
 
 function M.Task:from_current_buffer()
@@ -63,7 +62,8 @@ function M.Task:from_lines(lines)
       local value = string.gsub(line, '^#%s*', '')
       if (current_column == 'body') then
         -- the only place where we accept blank lines
-        task[current_column] = task[current_column] .. value .. '\n'
+        local existing_body = (task['body'] ~= nil and task['body'] or '')
+        task['body'] = existing_body .. value .. "\n"
       elseif (value ~= '' and empty_captures ~= nil) then
         task[current_column] = value
       end
@@ -92,6 +92,7 @@ function M.Store:get_task_list_file()
       vim.api.nvim_set_option_value("ft", "md", { buf = buf })
     end
   end
+  return buf
 end
 
 function M.Store:write_task()
@@ -118,8 +119,8 @@ end
 function M.Store:read(file_name)
   local tasko_dir = get_or_create_tasko_directory()
   local target_file = vim.fs.joinpath(tasko_dir, file_name)
-  local file = Path:new(target_file):read()
-  return M.Task:from_lines(file)
+  local file_content = Path:new(target_file):read()
+  return M.Task:from_lines(vim.split(file_content, "\n"))
 end
 
 function M.Store:list_tasks(override_task_list_filename)

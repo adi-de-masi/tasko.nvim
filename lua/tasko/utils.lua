@@ -35,6 +35,9 @@ function utils.line_number_of(buf, pattern)
 end
 
 function utils.replace_line(buf, line_number, new_line)
+  if (line_number == nil) then
+    line_number = -1
+  end
   vim.api.nvim_buf_call(buf, function()
     if (line_number > 0) then
       vim.api.nvim_win_set_cursor(0, { line_number, 0 })

@@ -1,22 +1,14 @@
 local Store = require('tasko').Store
-local Path = require('plenary.path')
-local base_dir = Store:get_or_create_tasko_directory()
 local utils = require('tasko').Utils
 
 vim.api.nvim_create_user_command("TaskoList", function()
   local buf = Store:get_task_list_file()
-  local task_list = require('tasko').Store:list_tasks()
+  local task_list = Store:list_tasks()
   for _, task_file in ipairs(task_list) do
-    local task_lines = Path:new(vim.fs.joinpath(base_dir, task_file)):read()
-    local task = require('tasko').Task:from_lines(task_lines)
+    local task = Store:read(task_file)
     local escaped_task_id = string.gsub(task.id, "%-", "%%-")
     local line_number_in_task_list = utils.line_number_of(buf, escaped_task_id)
-    local task_line = task.to_task_list_line()
-    if (line_number_in_task_list ~= nil) then
-      utils.replace_line(buf, line_number_in_task_list, task_line)
-    else
-      utils.replace_line(buf, -1, task_line)
-    end
+    utils.replace_line(buf, line_number_in_task_list, task.to_task_list_line())
   end
   vim.api.nvim_set_current_buf(buf)
   vim.fn.execute('set ft=markdown')
