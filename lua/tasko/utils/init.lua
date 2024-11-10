@@ -1,3 +1,4 @@
+local Path = require 'plenary.path'
 local utils = {}
 local random = math.random
 
@@ -46,6 +47,20 @@ function utils.replace_line(buf, line_number, new_line)
     end
     vim.api.nvim_put({ new_line }, 'l', true, false)
   end)
+end
+
+function utils.get_or_create_tasko_directory()
+  -- `~/.config/share/nvim` on unix
+  local data_dir = vim.fn.stdpath("data")
+  if (type(data_dir) == "table") then
+    data_dir = data_dir[1]
+  end
+  local tasko_dir = vim.fs.joinpath(data_dir, "tasko")
+  local tasko_dir_path = Path:new(tasko_dir)
+  if (not tasko_dir_path:exists()) then
+    tasko_dir_path:mkdir()
+  end
+  return tasko_dir
 end
 
 return utils

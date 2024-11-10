@@ -1,7 +1,7 @@
 local Path = require 'plenary.path'
-local Task = require('tasko').Task
-local Store = require('tasko').Store
-local utils = require('tasko').Utils
+local Task = require('tasko.task')
+local Store = require('tasko.store')
+local utils = require('tasko.utils')
 
 describe('text to task', function()
   it('Creates a task', function()

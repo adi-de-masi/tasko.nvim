@@ -1,11 +1,12 @@
-local Store = require('tasko').Store
-local utils = require('tasko').Utils
+local Store = require('tasko.store')
+local Task = require('tasko.task')
+local utils = require('tasko.utils')
 
 vim.api.nvim_create_user_command("TaskoList", function()
   local buf = Store:get_task_list_file()
   local task_list = Store:list_tasks()
   for _, task_file in ipairs(task_list) do
-    local task = Store:read(task_file)
+    local task = Store:get_task_from_file(task_file)
     local escaped_task_id = string.gsub(task.id, "%-", "%%-")
     local line_number_in_task_list = utils.line_number_of(buf, escaped_task_id)
     utils.replace_line(buf, line_number_in_task_list, task.to_task_list_line())
@@ -16,15 +17,8 @@ vim.api.nvim_create_user_command("TaskoList", function()
 end, {})
 
 vim.api.nvim_create_user_command("TaskoNew", function()
-  local buf = vim.api.nvim_create_buf(true, false)
-  local task = require('tasko').Task:new()
-  local tasko_dir = require('tasko').Store:get_or_create_tasko_directory()
-  local new_task_file = vim.fs.joinpath(tasko_dir, task.id .. '.md');
-  vim.api.nvim_buf_set_name(buf, new_task_file)
-  local template = { '[//]: # (title)', '# Title', '[//]: # (body)', '# Body', '[//]: # (id)', task.id }
-  vim.api.nvim_buf_call(buf, function()
-    vim.api.nvim_put(template, 'l', false, false)
-  end)
+  local task = Task:new()
+  local buf = task:to_buffer()
   vim.api.nvim_set_current_buf(buf)
   vim.fn.execute('set ft=markdown')
 end, {})
