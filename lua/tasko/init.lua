@@ -15,8 +15,8 @@ local function get_or_create_tasko_directory()
   end
   return tasko_dir
 end
-local base_dir = get_or_create_tasko_directory()
 
+local tasko_base_dir = get_or_create_tasko_directory()
 
 M.Task = {}
 function M.Task:new(id, title, body)
@@ -28,10 +28,20 @@ function M.Task:new(id, title, body)
   o.body = body or ''
   o.to_task_list_line = function()
     if (o.done ~= nil) then
-      return string.format("DONE: [%s](%s/%s.md)", o.title, base_dir, o.id)
+      return string.format("DONE: [%s](%s/%s.md)", o.title, tasko_base_dir, o.id)
     else
-      return string.format("[%s](%s/%s.md)", o.title, base_dir, o.id)
+      return string.format("[%s](%s/%s.md)", o.title, tasko_base_dir, o.id)
     end
+  end
+  o.to_buffer = function()
+    local buf = vim.api.nvim_create_buf(true, false)
+    local new_task_file = vim.fs.joinpath(tasko_base_dir, o.id .. '.md');
+    vim.api.nvim_buf_set_name(buf, new_task_file)
+    local template = { '[//]: # (title)', '# Title', '', '[//]: # (body)', '# Body', '', '[//]: # (id)', o.id }
+    vim.api.nvim_buf_call(buf, function()
+      vim.api.nvim_put(template, 'l', false, false)
+    end)
+    return buf
   end
   return o
 end
@@ -80,7 +90,7 @@ function M.Store:get_task_list_file()
   if (not buf) then
     -- Task List is stored in a file
     local task_list_file = Path:new(
-      vim.fs.joinpath(base_dir, task_list_filename))
+      vim.fs.joinpath(tasko_base_dir, task_list_filename))
     if (task_list_file:exists()) then
       -- try to load from file
       vim.fn.execute(string.format('edit %s', task_list_file:absolute()))
@@ -101,8 +111,7 @@ function M.Store:write_task()
     print('nothing written, no task identified')
     return
   end
-  local tasko_dir = get_or_create_tasko_directory()
-  local target_file = vim.fs.joinpath(tasko_dir, task.id .. ".md")
+  local target_file = vim.fs.joinpath(tasko_base_dir, task.id .. ".md")
   local content = table.concat(
     vim.api.nvim_buf_get_lines(
       vim.api.nvim_get_current_buf(), 0, -1, false),
@@ -112,19 +121,17 @@ function M.Store:write_task()
 end
 
 function M.Store:delete(task_id)
-  local file_path = vim.fs.joinpath(base_dir, task_id .. ".md")
+  local file_path = vim.fs.joinpath(tasko_base_dir, task_id .. ".md")
   return Path:new(file_path):rm()
 end
 
-function M.Store:read(file_name)
-  local tasko_dir = get_or_create_tasko_directory()
-  local target_file = vim.fs.joinpath(tasko_dir, file_name)
+function M.Store:get_task_from_file(file_name)
+  local target_file = vim.fs.joinpath(tasko_base_dir, file_name)
   local file_content = Path:new(target_file):read()
   return M.Task:from_lines(vim.split(file_content, "\n"))
 end
 
 function M.Store:list_tasks(override_task_list_filename)
-  local tasko_dir = get_or_create_tasko_directory()
   local task_list_file_to_exclude
   if (override_task_list_filename) then
     task_list_file_to_exclude = override_task_list_filename
@@ -133,7 +140,7 @@ function M.Store:list_tasks(override_task_list_filename)
   end
   local result = {}
   local i = 1
-  for dir in io.popen("ls -pa " .. tasko_dir .. "  | grep -v / | grep -v \"" .. string.gsub(task_list_file_to_exclude, "*", "\\*") .. "\""):lines()
+  for dir in io.popen("ls -pa " .. tasko_base_dir .. "  | grep -v / | grep -v \"" .. string.gsub(task_list_file_to_exclude, "*", "\\*") .. "\""):lines()
   do
     result[i] = dir
     i = i + 1
