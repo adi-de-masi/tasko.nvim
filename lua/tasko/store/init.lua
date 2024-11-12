@@ -26,7 +26,17 @@ function Store:get_task_list_file()
   return buf
 end
 
-function Store:write_task()
+function Store:write_task_to_tasko_base_dir(task)
+  local buf = task:to_buffer()
+  local target_file = vim.fs.joinpath(tasko_base_dir, task.id .. ".md")
+  local content = table.concat(
+    vim.api.nvim_buf_get_lines(
+      buf, 0, -1, false),
+    '\n')
+  Path:new(target_file):write(content, "w")
+end
+
+function Store:write_buffer_to_tasko_base_dir()
   local task = Task:from_current_buffer()
   if (not task) then
     print('nothing written, no task identified')
