@@ -19,7 +19,8 @@ function Task:new(id, title, body)
     local buf = vim.api.nvim_create_buf(true, false)
     local new_task_file = vim.fs.joinpath(tasko_base_dir, o.id .. '.md');
     vim.api.nvim_buf_set_name(buf, new_task_file)
-    local template = { '[//]: # (title)', '# Title', '', '[//]: # (body)', '# Body', '', '[//]: # (id)', o.id }
+    local template = { '[//]: # (title)', '# ' .. o.title, '', '[//]: # (body)', '# ' .. o.body, '', '[//]: # (id)', o
+        .id }
     vim.api.nvim_buf_call(buf, function()
       vim.api.nvim_put(template, 'l', false, false)
     end)

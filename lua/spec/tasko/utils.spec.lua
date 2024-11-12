@@ -38,7 +38,7 @@ As many as you wish, actually.
 
   it('writes a markdown file to a task', function()
     vim.fn.execute('edit lua/spec/tasko/test_task.md', false)
-    local file_name = Store:write_task()
+    local file_name = Store:write_buffer_to_tasko_base_dir()
     local file = Path:new(file_name)
     assert(file:exists())
     file:rm()
@@ -49,11 +49,11 @@ describe('listing tasks', function()
   it('reads all tasks from the tasko directory', function()
     vim.fn.execute('edit lua/spec/tasko/test_task.md', false)
     vim.api.nvim_buf_set_lines(0, 14, 15, false, { '1234-1' })
-    Store:write_task()
+    Store:write_buffer_to_tasko_base_dir()
     vim.api.nvim_buf_set_lines(0, 14, 15, false, { '1234-2' })
-    Store:write_task()
+    Store:write_buffer_to_tasko_base_dir()
     vim.api.nvim_buf_set_lines(0, 14, 15, false, { '1234-3' })
-    Store:write_task()
+    Store:write_buffer_to_tasko_base_dir()
     -- and a file we don't want to see in list_tasks: The tasklist itself
     -- we give it a different name to make sure it doesn't accidentally
     -- overwrite a real task list
