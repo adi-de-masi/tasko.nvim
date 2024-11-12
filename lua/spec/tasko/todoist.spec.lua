@@ -1,18 +1,6 @@
 local Todoist = require('todoist')
+local Task = require('tasko.task')
 local curl = require("plenary.curl")
-
-function dump(o)
-  if type(o) == 'table' then
-    local s = '{ '
-    for k, v in pairs(o) do
-      if type(k) ~= 'number' then k = '"' .. k .. '"' end
-      s = s .. '[' .. k .. '] = ' .. dump(v) .. ','
-    end
-    return s .. '} '
-  else
-    return tostring(o)
-  end
-end
 
 describe('todoist api', function()
   it('plenary.curl basic learning test', function()
@@ -24,21 +12,13 @@ describe('todoist api', function()
   end)
 
   it('lists all tasks', function()
-    local token = os.getenv("TODOIST_API_KEY")
-    local res = nil
-    local done = false
-    local job = curl.get("https://api.todoist.com/rest/v2/tasks", {
-      query = {},
-      headers = {
-        ["Authorization "] = "Bearer " .. token,
-        ["accept"] = "application/json"
-      },
-      callback = function(out)
-        done = true
-        res = out
-      end
-    })
-    job:wait()
-    print(dump(res))
+    local T = Todoist:new()
+    local tasks = T:query_all('tasks')
+    for key, value in ipairs(tasks) do
+      local task = Task:new(value["id"], value["content"], value["description"])
+      tasks[key] = task
+    end
+    assert.is_string(tasks[1].title,
+      'The first task has no title. This could mean, Adi has no tasks currently or we have an issue')
   end)
 end)

@@ -1,7 +1,7 @@
 local Store = require('tasko.store')
 local Task = require('tasko.task')
 local utils = require('tasko.utils')
-local Todoist = require('todoist')
+local Todoist = require('todoist'):new()
 
 vim.api.nvim_create_user_command("TaskoList", function()
   local buf = Store:get_task_list_file()
@@ -50,20 +50,9 @@ function dump(o)
 end
 
 vim.api.nvim_create_user_command("TaskoFetchTasks", function()
-  local job = T:query_all("tasks", function(out)
-    local T = Todoist:new()
-    if out.status == 200 then
-      local res_json = vim.json.decode(out.body)
-      for _, t in pairs(res_json) do
-        local title = t.content
-        local body = t.description
-        local id = t.id
-        local task = Task:new(id, title, body)
-        Store:write_task_to_tasko_base_dir(task)
-      end
-    else
-      print("gopferdeli")
-    end
-  end)
-  job:wait(15000)
+  local tasks = Todoist:query_all("tasks")
+  for _, value in ipairs(tasks) do
+    local task = Task:new(value["id"], value["content"], value["description"])
+    Store:write_task_to_tasko_base_dir(task)
+  end
 end, {})
