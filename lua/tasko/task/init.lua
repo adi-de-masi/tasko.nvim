@@ -5,6 +5,11 @@ function Task:new(id, title, body)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
+	if type(id) == "number" then
+		o.todoist_id = id
+	else
+		o.todoist_id = nil
+	end
 	o.id = id or utils.uuid()
 	o.title = title or ""
 	o.body = body or ""
@@ -30,7 +35,10 @@ function Task:new(id, title, body)
 			"# " .. o.body,
 			"",
 			"[//]: # (id)",
-			o.id,
+			tostring(o.id),
+			"",
+			"[//]: # (todoist_id)",
+			tostring(o.todoist_id),
 		}
 		vim.api.nvim_buf_call(buf, function()
 			vim.api.nvim_put(template, "l", false, false)

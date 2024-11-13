@@ -34,6 +34,10 @@ vim.api.nvim_create_user_command("TaskoDone", function()
 			vim.api.nvim_buf_set_lines(current_buf, -1, -1, true, { "", "[//]: # (done)", now })
 		end)
 	end
+	local task = Task:from_current_buffer()
+	if task.todoist_id ~= nil then
+		Todoist:complete(task.todoist_id)
+	end
 end, {})
 
 function dump(o)
@@ -54,10 +58,10 @@ end
 vim.api.nvim_create_user_command("TaskoFetchTasks", function()
 	local tasks = Todoist:query_all("tasks")
 	for _, value in ipairs(tasks) do
-		local task = Task:new(value["id"], value["content"], value["description"])
+		local task = Task:new(tonumber(value["id"]), value["content"], value["description"])
 		local task_path = Path:new(task.get_file_name())
 		if not task_path:exists() then
-			print("writing " .. task.idz)
+			print("writing " .. task.id)
 			Store:write_task_to_tasko_base_dir(task)
 		end
 	end
