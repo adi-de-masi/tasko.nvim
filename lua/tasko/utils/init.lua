@@ -43,7 +43,9 @@ function utils.replace_line(buf, line_number, new_line)
     if (line_number > 0) then
       vim.api.nvim_win_set_cursor(0, { line_number, 0 })
       vim.api.nvim_del_current_line()
-      vim.api.nvim_win_set_cursor(0, { line_number - 1, 0 })
+      if (line_number > 1) then
+        vim.api.nvim_win_set_cursor(0, { line_number - 1, 0 })
+      end
     end
     vim.api.nvim_put({ new_line }, 'l', true, false)
   end)
