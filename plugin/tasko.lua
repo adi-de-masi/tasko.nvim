@@ -25,6 +25,30 @@ vim.api.nvim_create_user_command("TaskoNew", function()
 	vim.fn.execute("set ft=markdown")
 end, {})
 
+vim.api.nvim_create_user_command("TaskoSyncTask", function()
+	local current_task = Task:from_current_buffer()
+	if current_task.todoist_id == nil then
+		local task_payload = { content = current_task.title, description = current_task.body }
+		local new_task_response = Todoist:new_task(task_payload)
+		assert(new_task_response["status"] == 200, "Error creating task")
+		local new_task_body = vim.json.decode(new_task_response["body"])
+		current_task.todoist_id = new_task_body.id
+		local current_buf = vim.api.nvim_get_current_buf()
+		vim.api.nvim_buf_call(current_buf, function()
+			vim.api.nvim_buf_set_lines(
+				current_buf,
+				-1,
+				-1,
+				true,
+				{ "", "[//]: # (todoist_id)", current_task.todoist_id }
+			)
+		end)
+	else
+		local update_task_payload = { content = current_task.title, description = current_task.body }
+		Todoist:update(current_task.todoist_id, update_task_payload)
+	end
+end, {})
+
 vim.api.nvim_create_user_command("TaskoDone", function()
 	local current_buf = vim.api.nvim_get_current_buf()
 	local now = os.date("!%Y-%m-%dT%TZ")
