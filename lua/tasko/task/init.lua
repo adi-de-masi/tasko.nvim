@@ -1,7 +1,7 @@
 local utils = require("tasko.utils")
 local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Task = {}
-function Task:new(id, title, body)
+function Task:new(id, title, body, priority, is_completed)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
@@ -13,6 +13,8 @@ function Task:new(id, title, body)
 	o.id = id or utils.uuid()
 	o.title = title or ""
 	o.body = body or ""
+	o.priority = priority or 4
+	o.is_completed = is_completed or false
 	o.get_file_name = function()
 		return string.format("[%s](%s/%s.md)", o.title, tasko_base_dir, o.id)
 	end
@@ -37,9 +39,21 @@ function Task:new(id, title, body)
 			"[//]: # (id)",
 			tostring(o.id),
 			"",
-			"[//]: # (todoist_id)",
-			tostring(o.todoist_id),
+			"[//]: # (priority)",
+			tostring(o.priority),
+			"",
+			"[//]: # (is_completed)",
+			tostring(o.is_completed),
 		}
+		if o.todoist_id ~= nil then
+			template.concat({
+				"",
+				"[//]: # (todoist_id)",
+				tostring(o.todoist_id),
+			})
+			table.insert(template, 1, "[//]: # (todoist_id)")
+			table.insert(template, 2, tostring(o.todoist_id))
+		end
 		vim.api.nvim_buf_call(buf, function()
 			vim.api.nvim_put(template, "l", false, false)
 		end)

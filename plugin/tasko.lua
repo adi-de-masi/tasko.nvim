@@ -44,7 +44,8 @@ vim.api.nvim_create_user_command("TaskoSyncTask", function()
 			)
 		end)
 	else
-		local update_task_payload = { content = current_task.title, description = current_task.body }
+		local update_task_payload =
+			{ content = current_task.title, description = current_task.body, priority = current_task.priority }
 		Todoist:update(current_task.todoist_id, update_task_payload)
 	end
 end, {})
