@@ -3,8 +3,45 @@ local Task = require("tasko.task")
 local utils = require("tasko.utils")
 local Todoist = require("todoist"):new()
 local Path = require("plenary.path")
+local pickers = require("telescope.pickers")
+local finders = require("telescope.finders")
+local conf = require("telescope.config").values
 
 vim.api.nvim_create_user_command("TaskoList", function()
+	local displayed_list = {}
+	local data_dir = utils.get_or_create_tasko_directory()
+	local task_files = Store:list_tasks()
+	for i, task_file in ipairs(task_files) do
+		local task = Store:get_task_from_file(task_file)
+		local has_todoist_id = task.todoist_id ~= nil
+		local display_string = (has_todoist_id and "📅 " or "") .. task.title
+		displayed_list[i] = {
+			value = vim.fs.joinpath(data_dir, task_file),
+			display = display_string,
+			ordinal = task.priority,
+		}
+	end
+	local opts = {}
+	pickers
+		.new(opts, {
+			prompt_title = "All Tasks",
+			finder = finders.new_table({
+				results = displayed_list,
+				entry_maker = function(entry)
+					return {
+						value = entry.value,
+						display = entry.display,
+						ordinal = entry.ordinal,
+					}
+				end,
+			}),
+			sorter = conf.generic_sorter(opts),
+			previewer = require("telescope.previewers").cat.new(opts),
+		})
+		:find()
+end, {})
+
+vim.api.nvim_create_user_command("TaskoFart", function()
 	local buf = Store:get_task_list_file()
 	local task_list = Store:list_tasks()
 	for _, task_file in ipairs(task_list) do
