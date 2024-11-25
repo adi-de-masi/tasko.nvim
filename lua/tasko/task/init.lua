@@ -1,6 +1,26 @@
 local utils = require("tasko.utils")
 local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Task = {}
+local function serialize(task)
+	if type(task) == "number" then
+		io.write(task)
+	elseif type(task) == "string" then
+		io.write(string.format("%q", task))
+	elseif type(task) == "table" then
+		io.write("{\n")
+		for k, v in pairs(task) do
+			if type(v) ~= "function" then
+				io.write("  ", k, " = ")
+				serialize(v)
+				io.write(",\n")
+			end
+		end
+		io.write("}\n")
+	else
+		-- error("cannot serialize a " .. type(o))
+	end
+end
+
 function Task:new(id, title, body, priority, is_completed)
 	local o = {}
 	setmetatable(o, self)
@@ -24,6 +44,13 @@ function Task:new(id, title, body, priority, is_completed)
 		else
 			return o.get_file_name()
 		end
+	end
+	o.serialize = function()
+		local outputFile = utils.get_or_create_tasko_directory() .. "/" .. o.id .. ".tasko"
+		io.output(outputFile)
+		serialize(o)
+		io.flush()
+		io.close()
 	end
 	o.to_buffer = function()
 		local buf = vim.api.nvim_create_buf(true, false)
@@ -71,28 +98,27 @@ function Task:from_buffer(buf)
 	return Task:from_lines(lines)
 end
 
+local function split(input, delimiter)
+	local result = {}
+	for match in (input .. delimiter):gmatch("(.-)" .. delimiter) do
+		table.insert(result, match)
+	end
+	return result
+end
+
 function Task:from_lines(lines)
-	--[[
-  Our delimiter is a markdown comment like so
-  `[//]: # (title)`
-  --]]
-	local delimiter_regex = "^%s*(%[//%]: #)%s*%((.*)%)"
 	local task = Task:new()
 	local current_column = nil
 	for _, line in ipairs(lines) do
-		local _, _, delimiter, column = string.find(line, delimiter_regex)
-		if delimiter then
-			current_column = column
-		elseif current_column ~= nil then
-			local empty_captures = not string.match(line, "^%s*$")
-			local value = string.gsub(line, "^#%s*", "")
-			if current_column == "body" then
-				-- the only place where we accept blank lines
-				local existing_body = (task["body"] ~= nil and task["body"] or "")
-				task["body"] = existing_body .. value .. "\n"
-			elseif value ~= "" and empty_captures ~= nil then
-				task[current_column] = value
+		local _, j = (line):find("=")
+		if j ~= nil and j > 0 then
+			local splitted_string = split(line, "=")
+			if splitted_string[1] ~= nil then
+				current_column = splitted_string[1]:gsub("%s+", "")
+				task[current_column] = splitted_string[2] or ""
 			end
+		elseif current_column == "description" then
+			task[current_column] = task[current_column] .. line .. "\n"
 		end
 	end
 	return task
