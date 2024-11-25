@@ -2,7 +2,6 @@ local Store = require("tasko.store")
 local Task = require("tasko.task")
 local utils = require("tasko.utils")
 local Todoist = require("todoist"):new()
-local Path = require("plenary.path")
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
@@ -39,20 +38,6 @@ vim.api.nvim_create_user_command("TaskoList", function()
 			previewer = require("telescope.previewers").cat.new(opts),
 		})
 		:find()
-end, {})
-
-vim.api.nvim_create_user_command("TaskoFart", function()
-	local buf = Store:get_task_list_file()
-	local task_list = Store:list_tasks()
-	for _, task_file in ipairs(task_list) do
-		local task = Store:get_task_from_file(task_file)
-		local escaped_task_id = string.gsub(task.id, "%-", "%%-")
-		local line_number_in_task_list = utils.line_number_of(buf, escaped_task_id)
-		utils.replace_line(buf, line_number_in_task_list, task.to_task_list_line())
-	end
-	vim.api.nvim_set_current_buf(buf)
-	vim.fn.execute("set ft=markdown")
-	return buf
 end, {})
 
 vim.api.nvim_create_user_command("TaskoNew", function()
@@ -102,29 +87,16 @@ vim.api.nvim_create_user_command("TaskoDone", function()
 	end
 end, {})
 
-function dump(o)
-	if type(o) == "table" then
-		local s = "{ "
-		for k, v in pairs(o) do
-			if type(k) ~= "number" then
-				k = '"' .. k .. '"'
-			end
-			s = s .. "[" .. k .. "] = " .. dump(v) .. ","
-		end
-		return s .. "} "
-	else
-		return tostring(o)
-	end
-end
-
 vim.api.nvim_create_user_command("TaskoFetchTasks", function()
 	local tasks = Todoist:query_all("tasks")
 	for _, value in ipairs(tasks) do
-		local task = Task:new(tonumber(value["id"]), value["content"], value["description"])
-		local task_path = Path:new(task.get_file_name())
-		if not task_path:exists() then
-			print("writing " .. task.id)
-			Store:write_task_to_tasko_base_dir(task)
-		end
+		local task = Task:new(
+			tonumber(value["id"]),
+			value["content"],
+			value["description"],
+			tonumber(value["priority"]),
+			value["is_completed"]
+		)
+		task.serialize()
 	end
 end, {})
