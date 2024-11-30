@@ -9,7 +9,7 @@
       "description": "The title of a task",
       "type": "string"
     },
-    "body": {
+    "description": {
       "description": "The body of a task",
       "type": "string"
     }

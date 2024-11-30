@@ -8,14 +8,13 @@ local conf = require("telescope.config").values
 
 vim.api.nvim_create_user_command("TaskoList", function()
 	local displayed_list = {}
-	local data_dir = utils.get_or_create_tasko_directory()
 	local task_files = Store:list_tasks()
 	for i, task_file in ipairs(task_files) do
-		local task = Store:get_task_from_file(task_file)
+		local task = Store:get_task_from_path(task_file)
 		local has_todoist_id = task.todoist_id ~= nil
 		local display_string = (has_todoist_id and "📅 " or "") .. task.title
 		displayed_list[i] = {
-			value = vim.fs.joinpath(data_dir, task_file),
+			value = task_file,
 			display = display_string,
 			ordinal = task.priority,
 		}
@@ -49,6 +48,31 @@ end, {})
 
 vim.api.nvim_create_user_command("TaskoSyncTask", function()
 	local current_task = Task:from_current_buffer()
+	if current_task == nil then
+		print("cannot parse a task from this buffer")
+		return
+	end
+	if current_task.todoist_id == nil then
+		local task_payload = { content = current_task.title, description = current_task.body }
+		local new_task_response = Todoist:new_task(task_payload)
+		assert(new_task_response["status"] == 200, "Error creating task")
+		local new_task_body = vim.json.decode(new_task_response["body"])
+		current_task.todoist_id = new_task_body.id
+		local current_buf = vim.api.nvim_get_current_buf()
+		vim.api.nvim_buf_call(current_buf, function()
+			vim.api.nvim_buf_set_lines(
+				current_buf,
+				-1,
+				-1,
+				true,
+				{ "", "[//]: # (todoist_id)", current_task.todoist_id }
+			)
+		end)
+	else
+		local update_task_payload =
+			{ content = current_task.title, description = current_task.body, priority = current_task.priority }
+		Todoist:update(current_task.todoist_id, update_task_payload)
+	end
 	if current_task.todoist_id == nil then
 		local task_payload = { content = current_task.title, description = current_task.body }
 		local new_task_response = Todoist:new_task(task_payload)
@@ -82,6 +106,10 @@ vim.api.nvim_create_user_command("TaskoDone", function()
 		end)
 	end
 	local task = Task:from_current_buffer()
+	if task == nil then
+		print("cannot parse a task from this buffer")
+		return
+	end
 	if task.todoist_id ~= nil then
 		Todoist:complete(task.todoist_id)
 	end
@@ -97,6 +125,6 @@ vim.api.nvim_create_user_command("TaskoFetchTasks", function()
 			tonumber(value["priority"]),
 			value["is_completed"]
 		)
-		task.serialize()
+		Store:write(task)
 	end
 end, {})
