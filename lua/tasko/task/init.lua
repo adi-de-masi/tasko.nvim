@@ -1,27 +1,9 @@
 local utils = require("tasko.utils")
+-- local Store = require("tasko.store")
 local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Task = {}
-local function serialize(task)
-	if type(task) == "number" then
-		io.write(task)
-	elseif type(task) == "string" then
-		io.write(string.format("%q", task))
-	elseif type(task) == "table" then
-		io.write("{\n")
-		for k, v in pairs(task) do
-			if type(v) ~= "function" then
-				io.write("  ", k, " = ")
-				serialize(v)
-				io.write(",\n")
-			end
-		end
-		io.write("}\n")
-	else
-		-- error("cannot serialize a " .. type(o))
-	end
-end
 
-function Task:new(id, title, body, priority, is_completed)
+function Task:new(id, title, description, priority, is_completed)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
@@ -32,7 +14,7 @@ function Task:new(id, title, body, priority, is_completed)
 	end
 	o.id = id or utils.uuid()
 	o.title = title or ""
-	o.body = body or ""
+	o.description = description or ""
 	o.priority = priority or 4
 	o.is_completed = is_completed or false
 	o.get_file_name = function()
@@ -45,13 +27,6 @@ function Task:new(id, title, body, priority, is_completed)
 			return o.get_file_name()
 		end
 	end
-	o.serialize = function()
-		local outputFile = utils.get_or_create_tasko_directory() .. "/" .. o.id .. ".tasko"
-		io.output(outputFile)
-		serialize(o)
-		io.flush()
-		io.close()
-	end
 	o.to_buffer = function()
 		local buf = vim.api.nvim_create_buf(true, false)
 		local new_task_file = vim.fs.joinpath(tasko_base_dir, o.id .. ".md")
@@ -60,8 +35,8 @@ function Task:new(id, title, body, priority, is_completed)
 			"[//]: # (title)",
 			"# " .. o.title,
 			"",
-			"[//]: # (body)",
-			"# " .. o.body,
+			"[//]: # (description)",
+			"# " .. o.description,
 			"",
 			"[//]: # (id)",
 			tostring(o.id),
@@ -89,6 +64,16 @@ function Task:new(id, title, body, priority, is_completed)
 	return o
 end
 
+function Task:from_json(json_lines)
+	local decoded = vim.json.decode(json_lines)
+	local id = decoded.id
+	local title = decoded.title
+	local description = decoded.description
+	local priority = decoded.priority or 1
+	local is_completed = decoded.is_completed or false
+	return Task:new(id, title, description, priority, is_completed)
+end
+
 function Task:from_current_buffer()
 	return Task:from_buffer(vim.api.nvim_get_current_buf())
 end
@@ -98,30 +83,24 @@ function Task:from_buffer(buf)
 	return Task:from_lines(lines)
 end
 
-local function split(input, delimiter)
-	local result = {}
-	for match in (input .. delimiter):gmatch("(.-)" .. delimiter) do
-		table.insert(result, match)
-	end
-	return result
-end
-
 function Task:from_lines(lines)
 	local task = Task:new()
 	local current_column = nil
+	local delimiter_regex = "^%s*(%[//%]: #)%s*%((.*)%)"
 	for _, line in ipairs(lines) do
-		local _, j = (line):find("=")
-		if j ~= nil and j > 0 then
-			local splitted_string = split(line, "=")
-			if splitted_string[1] ~= nil then
-				current_column = splitted_string[1]:gsub("%s+", "")
-				task[current_column] = splitted_string[2] or ""
+		local _, _, delimiter, column = string.find(line, delimiter_regex)
+		if delimiter then
+			current_column = column
+		elseif current_column ~= nil then
+			local empty_captures = not string.match(line, "^%s*$")
+			local value = string.gsub(line, "^#%s*", "")
+			if current_column == "description " then
+				local existing_description = (task["description"] ~= nil and task["description"] or "")
+				task["description"] = existing_description .. value .. "\n"
+			elseif value ~= "" and empty_captures ~= nil then
+				task[current_column] = value
 			end
-		elseif current_column == "description" then
-			task[current_column] = task[current_column] .. line .. "\n"
 		end
 	end
-	return task
 end
-
 return Task
