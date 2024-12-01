@@ -66,10 +66,12 @@ vim.api.nvim_create_user_command("TaskoList", function()
 end, {})
 
 vim.api.nvim_create_user_command("TaskoNew", function()
-	local task = Task:new()
-	local buf = task:to_buffer()
-	vim.api.nvim_set_current_buf(buf)
-	vim.fn.execute("set ft=markdown")
+	vim.ui.input({ prompt = "Task Title: " }, function(input)
+		local task = Task:new()
+		task.title = input
+		local description_file = Store:write(task)
+		vim.cmd("edit " .. description_file)
+	end)
 end, {})
 
 vim.api.nvim_create_user_command("TaskoDone", function()
