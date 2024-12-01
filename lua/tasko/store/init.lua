@@ -16,16 +16,11 @@ local function tableToSerializable(tbl)
 end
 
 function Store:write(task)
-	local json_output = utils.get_or_create_tasko_directory() .. "/" .. task.id .. ".json"
-	io.output(json_output)
-	io.write(vim.fn.json_encode(tableToSerializable(task)))
-	io.flush()
-	local description_output = utils.get_or_create_tasko_directory() .. "/" .. task.id .. ".md"
-	io.output(description_output)
-	io.write(task.description)
-	io.flush()
-	io.close()
-	return description_output
+	local json_output_path = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".json")
+	json_output_path:write(vim.fn.json_encode(tableToSerializable(task)), "w")
+	local description_output_file = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".md")
+	description_output_file:write(task.description or "", "w")
+	return description_output_file.filename
 end
 
 function Store:delete(task_id)
