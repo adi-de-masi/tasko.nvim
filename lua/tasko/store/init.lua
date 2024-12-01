@@ -16,12 +16,16 @@ local function tableToSerializable(tbl)
 end
 
 function Store:write(task)
-	local outputFile = utils.get_or_create_tasko_directory() .. "/" .. task.id .. ".json"
-	io.output(outputFile)
+	local json_output = utils.get_or_create_tasko_directory() .. "/" .. task.id .. ".json"
+	io.output(json_output)
 	io.write(vim.fn.json_encode(tableToSerializable(task)))
 	io.flush()
+	local description_output = utils.get_or_create_tasko_directory() .. "/" .. task.id .. ".md"
+	io.output(description_output)
+	io.write(task.description)
+	io.flush()
 	io.close()
-	return outputFile
+	return description_output
 end
 
 function Store:delete(task_id)
@@ -37,7 +41,7 @@ end
 function Store:list_tasks()
 	local result = {}
 	local i = 1
-	for file in io.popen("ls -pa " .. tasko_base_dir .. "| grep -v / "):lines() do
+	for file in io.popen("ls -pa " .. tasko_base_dir .. "| grep -v /  | grep .json"):lines() do
 		result[i] = vim.fs.joinpath(tasko_base_dir, file)
 		i = i + 1
 	end

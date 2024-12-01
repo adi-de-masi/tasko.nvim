@@ -1,10 +1,12 @@
 local Store = require("tasko.store")
 local Task = require("tasko.task")
-local utils = require("tasko.utils")
 local Todoist = require("todoist"):new()
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
+local actions = require("telescope.actions")
+local action_state = require("telescope.actions.state")
+local previewers = require("telescope.previewers")
 
 vim.api.nvim_create_user_command("TaskoList", function()
 	local displayed_list = {}
@@ -14,7 +16,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
 		local has_todoist_id = task.todoist_id ~= nil
 		local display_string = (has_todoist_id and "📅 " or "") .. task.title
 		displayed_list[i] = {
-			value = task_file,
+			value = { task_file = task_file, task_description = task_file:gsub(".json$", ".md") },
 			display = display_string,
 			ordinal = task.priority,
 		}
@@ -34,7 +36,31 @@ vim.api.nvim_create_user_command("TaskoList", function()
 				end,
 			}),
 			sorter = conf.generic_sorter(opts),
-			previewer = require("telescope.previewers").cat.new(opts),
+			attach_mappings = function(_, _)
+				-- Define what happens on Enter
+				actions.select_default:replace(function()
+					local selection = action_state.get_selected_entry()
+					actions.close(vim.api.nvim_get_current_buf()) -- Close the picker
+					if selection and selection.value and selection.value.task_description then
+						vim.cmd("edit " .. selection.value.task_description)
+					else
+						print("No file selected")
+					end
+				end)
+				return true
+			end,
+			previewer = previewers.new_buffer_previewer({
+				define_preview = function(self, entry)
+					local file = io.open(entry.value.task_description, "r")
+					if file then
+						local content = file:read("*a")
+						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(content, "\n"))
+						file:close()
+					else
+						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, { "Could not open file" })
+					end
+				end,
+			}),
 		})
 		:find()
 end, {})
@@ -44,56 +70,6 @@ vim.api.nvim_create_user_command("TaskoNew", function()
 	local buf = task:to_buffer()
 	vim.api.nvim_set_current_buf(buf)
 	vim.fn.execute("set ft=markdown")
-end, {})
-
-vim.api.nvim_create_user_command("TaskoSyncTask", function()
-	local current_task = Task:from_current_buffer()
-	if current_task == nil then
-		print("cannot parse a task from this buffer")
-		return
-	end
-	if current_task.todoist_id == nil then
-		local task_payload = { content = current_task.title, description = current_task.body }
-		local new_task_response = Todoist:new_task(task_payload)
-		assert(new_task_response["status"] == 200, "Error creating task")
-		local new_task_body = vim.json.decode(new_task_response["body"])
-		current_task.todoist_id = new_task_body.id
-		local current_buf = vim.api.nvim_get_current_buf()
-		vim.api.nvim_buf_call(current_buf, function()
-			vim.api.nvim_buf_set_lines(
-				current_buf,
-				-1,
-				-1,
-				true,
-				{ "", "[//]: # (todoist_id)", current_task.todoist_id }
-			)
-		end)
-	else
-		local update_task_payload =
-			{ content = current_task.title, description = current_task.body, priority = current_task.priority }
-		Todoist:update(current_task.todoist_id, update_task_payload)
-	end
-	if current_task.todoist_id == nil then
-		local task_payload = { content = current_task.title, description = current_task.body }
-		local new_task_response = Todoist:new_task(task_payload)
-		assert(new_task_response["status"] == 200, "Error creating task")
-		local new_task_body = vim.json.decode(new_task_response["body"])
-		current_task.todoist_id = new_task_body.id
-		local current_buf = vim.api.nvim_get_current_buf()
-		vim.api.nvim_buf_call(current_buf, function()
-			vim.api.nvim_buf_set_lines(
-				current_buf,
-				-1,
-				-1,
-				true,
-				{ "", "[//]: # (todoist_id)", current_task.todoist_id }
-			)
-		end)
-	else
-		local update_task_payload =
-			{ content = current_task.title, description = current_task.body, priority = current_task.priority }
-		Todoist:update(current_task.todoist_id, update_task_payload)
-	end
 end, {})
 
 vim.api.nvim_create_user_command("TaskoDone", function()
