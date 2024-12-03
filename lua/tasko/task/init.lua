@@ -27,39 +27,21 @@ function Task:new(id, title, description, priority, is_completed)
 			return o.get_file_name()
 		end
 	end
-	o.to_buffer = function()
-		local buf = vim.api.nvim_create_buf(true, false)
-		local new_task_file = vim.fs.joinpath(tasko_base_dir, o.id .. ".md")
-		vim.api.nvim_buf_set_name(buf, new_task_file)
-		local template = {
-			"[//]: # (title)",
+	o.to_buffer = function(buf)
+		local lines = {
 			"# " .. o.title,
 			"",
-			"[//]: # (description)",
-			"# " .. o.description,
+			o.description,
 			"",
-			"[//]: # (id)",
-			tostring(o.id),
-			"",
-			"[//]: # (priority)",
-			tostring(o.priority),
-			"",
-			"[//]: # (is_completed)",
-			tostring(o.is_completed),
+			"---------------------",
+			"-- id: " .. o.id,
+			"-- todoist_id: " .. (o.todoist_id or ""),
+			"-- priority: " .. o.priority,
+			"-- is_completed: " .. tostring(o.is_completed),
 		}
-		if o.todoist_id ~= nil then
-			template.concat({
-				"",
-				"[//]: # (todoist_id)",
-				tostring(o.todoist_id),
-			})
-			table.insert(template, 1, "[//]: # (todoist_id)")
-			table.insert(template, 2, tostring(o.todoist_id))
-		end
 		vim.api.nvim_buf_call(buf, function()
-			vim.api.nvim_put(template, "l", false, false)
+			vim.api.nvim_put(lines, "l", false, false)
 		end)
-		return buf
 	end
 	return o
 end
@@ -103,4 +85,5 @@ function Task:from_lines(lines)
 		end
 	end
 end
+
 return Task
