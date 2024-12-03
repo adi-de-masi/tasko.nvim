@@ -11,15 +11,17 @@ local previewers = require("telescope.previewers")
 vim.api.nvim_create_user_command("TaskoList", function()
 	local displayed_list = {}
 	local task_files = Store:list_tasks()
-	for i, task_file in ipairs(task_files) do
-		local task = Store:get_task_from_path(task_file)
+	local i = 1
+	for id, task_file in pairs(task_files) do
+		local task = Store:get_task_from_paths(task_file.task_file, task_file.task_description_file)
 		local has_todoist_id = task.todoist_id ~= nil
 		local display_string = (has_todoist_id and "📅 " or "") .. task.title
 		displayed_list[i] = {
-			value = { task_file = task_file, task_description = task_file:gsub(".json$", ".md") },
+			value = { files = task_files[id], task = task },
 			display = display_string,
 			ordinal = task.priority,
 		}
+		i = i + 1
 	end
 	local opts = {}
 	pickers
@@ -29,7 +31,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
 				results = displayed_list,
 				entry_maker = function(entry)
 					return {
-						value = entry.value,
+						value = { files = entry.value.files, task = entry.value.task },
 						display = entry.display,
 						ordinal = entry.ordinal,
 					}
@@ -41,8 +43,18 @@ vim.api.nvim_create_user_command("TaskoList", function()
 				actions.select_default:replace(function()
 					local selection = action_state.get_selected_entry()
 					actions.close(vim.api.nvim_get_current_buf()) -- Close the picker
-					if selection and selection.value and selection.value.task_description then
-						vim.cmd("edit " .. selection.value.task_description)
+					if selection and selection.value and selection.value.task then
+						local task = selection.value.task
+						vim.cmd("view " .. task.title .. ".tasko")
+						local buf = vim.api.nvim_get_current_buf()
+						task.to_buffer(buf)
+						vim.api.nvim_buf_set_keymap(
+							buf,
+							"n",
+							"e",
+							":edit " .. selection.value.files.task_description_file .. "<CR>",
+							{ noremap = true, silent = true }
+						)
 					else
 						print("No file selected")
 					end
@@ -51,11 +63,10 @@ vim.api.nvim_create_user_command("TaskoList", function()
 			end,
 			previewer = previewers.new_buffer_previewer({
 				define_preview = function(self, entry)
-					local file = io.open(entry.value.task_description, "r")
-					if file then
-						local content = file:read("*a")
-						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(content, "\n"))
-						file:close()
+					local task = entry.value.task
+					if task then
+						task.to_buffer(self.state.bufnr)
+						-- vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(content, "\n"))
 					else
 						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, { "Could not open file" })
 					end

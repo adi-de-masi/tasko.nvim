@@ -16,11 +16,11 @@ local function tableToSerializable(tbl)
 end
 
 function Store:write(task)
-	local json_output_path = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".json")
-	json_output_path:write(vim.fn.json_encode(tableToSerializable(task)), "w")
-	local description_output_file = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".md")
-	description_output_file:write(task.description or "", "w")
-	return description_output_file.filename
+	local task_file = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".json")
+	task_file:write(vim.fn.json_encode(tableToSerializable(task)), "w")
+	local task_description_file = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".md")
+	task_description_file:write(task.description or "", "w")
+	return { task_file = task_file.filename, task_description_file = task_description_file.filename }
 end
 
 function Store:delete(task_id)
@@ -28,17 +28,27 @@ function Store:delete(task_id)
 	return Path:new(file_path):rm()
 end
 
-function Store:get_task_from_path(path_to_file)
+function Store:get_task_from_paths(path_to_file, path_to_description)
+	assert(path_to_file, "path_to_file is required")
+	assert(path_to_description, "path_to_description is required")
 	local file_content = Path:new(path_to_file):read()
-	return Task:from_json(file_content)
+	local description = Path:new(path_to_description):read()
+	local task = Task:from_json(file_content)
+	task.description = description
+	return task
 end
 
 function Store:list_tasks()
 	local result = {}
-	local i = 1
-	for file in io.popen("ls -pa " .. tasko_base_dir .. "| grep -v /  | grep .json"):lines() do
-		result[i] = vim.fs.joinpath(tasko_base_dir, file)
-		i = i + 1
+	for file in io.popen("ls -pa " .. tasko_base_dir .. "| grep -v /"):lines() do
+		local filename_without_extension = file:match("^(.*)%.")
+		local file_extension = file:match(".*%.(.*)$")
+		local type = file_extension == "json" and "task_file" or "task_description_file"
+		if result[filename_without_extension] == nil then
+			result[filename_without_extension] = { [type] = vim.fs.joinpath(tasko_base_dir, file) }
+		else
+			result[filename_without_extension][type] = vim.fs.joinpath(tasko_base_dir, file)
+		end
 	end
 	return result
 end
