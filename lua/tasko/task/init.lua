@@ -1,6 +1,4 @@
 local utils = require("tasko.utils")
--- local Store = require("tasko.store")
-local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Task = {}
 
 function Task:new(id, title, description, priority, is_completed)
@@ -17,16 +15,6 @@ function Task:new(id, title, description, priority, is_completed)
 	o.description = description or ""
 	o.priority = priority or 4
 	o.is_completed = is_completed or false
-	o.get_file_name = function()
-		return string.format("[%s](%s/%s.md)", o.title, tasko_base_dir, o.id)
-	end
-	o.to_task_list_line = function()
-		if o.done ~= nil then
-			return string.format("DONE: [%s](%s/%s.md)", o.title, tasko_base_dir, o.id)
-		else
-			return o.get_file_name()
-		end
-	end
 	o.to_buffer = function(buf)
 		local lines = {
 			"# " .. o.title,

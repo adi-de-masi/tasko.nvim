@@ -15,17 +15,38 @@ local function tableToSerializable(tbl)
 	return serializable
 end
 
+local get_task_json_file = function(task_id)
+	return Path:new(utils.get_or_create_tasko_directory(), task_id .. ".json")
+end
+
+local get_task_description_file = function(task_id)
+	return Path:new(utils.get_or_create_tasko_directory(), task_id .. ".md")
+end
+
 function Store:write(task)
-	local task_file = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".json")
+	local task_file = get_task_json_file(task.id)
 	task_file:write(vim.fn.json_encode(tableToSerializable(task)), "w")
-	local task_description_file = Path:new(utils.get_or_create_tasko_directory(), task.id .. ".md")
+	local task_description_file = get_task_description_file(task.id)
 	task_description_file:write(task.description or "", "w")
 	return { task_file = task_file.filename, task_description_file = task_description_file.filename }
+end
+
+function Store:update_description(task_id)
+	local task_description_file = get_task_description_file(task_id)
+	local task_file = get_task_json_file(task_id)
+	local task = Task:from_json(task_file:read())
+	local description = task_description_file:read()
+	task.description = description
+	Store:write(task)
 end
 
 function Store:delete(task_id)
 	local file_path = vim.fs.joinpath(tasko_base_dir, task_id .. ".md")
 	return Path:new(file_path):rm()
+end
+
+function Store:get_task_by_id(task_id)
+	return Store:get_task_from_paths(get_task_json_file(task_id), get_task_description_file(task_id))
 end
 
 function Store:get_task_from_paths(path_to_file, path_to_description)
