@@ -8,6 +8,37 @@ local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local previewers = require("telescope.previewers")
 
+function OpenDescriptionFile(task_buffer, task_description_file, task_id)
+	vim.api.nvim_command("vsplit")
+	local win = vim.api.nvim_get_current_win() -- Get the current window
+	local buf = vim.api.nvim_create_buf(true, false)
+
+	-- Set the buffer to the new window
+	vim.api.nvim_win_set_buf(win, buf)
+	vim.api.nvim_buf_set_name(buf, task_description_file)
+
+	-- Open
+	vim.api.nvim_command("edit " .. task_description_file)
+
+	-- Check if the autocmd is already set for this buffer
+	if vim.b[buf] and vim.b[buf].autocmd_attached then
+		return
+	end
+
+	-- Set a buffer-local variable to indicate the autocmd is set
+	vim.api.nvim_buf_set_var(buf, "autocmd_attached", true)
+
+	vim.api.nvim_create_autocmd("BufWritePost", {
+		buffer = vim.api.nvim_get_current_buf(),
+		callback = function()
+			Store:update_description(task_id)
+			local task = Store:get_task_by_id(task_id)
+			vim.api.nvim_buf_set_lines(task_buffer, 0, -1, false, { "" })
+			task.to_buffer(task_buffer)
+		end,
+	})
+end
+
 vim.api.nvim_create_user_command("TaskoList", function()
 	local displayed_list = {}
 	local task_files = Store:list_tasks()
@@ -48,13 +79,30 @@ vim.api.nvim_create_user_command("TaskoList", function()
 						vim.cmd("view " .. task.title .. ".tasko")
 						local buf = vim.api.nvim_get_current_buf()
 						task.to_buffer(buf)
+						vim.api.nvim_buf_set_option(buf, "readonly", true) -- Mark the buffer as readonly
 						vim.api.nvim_buf_set_keymap(
 							buf,
 							"n",
 							"e",
-							":edit " .. selection.value.files.task_description_file .. "<CR>",
+							":lua OpenDescriptionFile("
+								.. buf
+								.. ", '"
+								.. selection.value.files.task_description_file
+								.. "', '"
+								.. selection.value.task.id
+								.. "')<cr>",
 							{ noremap = true, silent = true }
 						)
+
+						if task.todoist_id ~= nil then
+							vim.api.nvim_buf_set_keymap(
+								buf,
+								"n",
+								"u",
+								":lua require('todoist'):new():update(" .. selection.value.task.todoist_id .. ")<CR>",
+								{ noremap = true, silent = true }
+							)
+						end
 					else
 						print("No file selected")
 					end
@@ -66,7 +114,6 @@ vim.api.nvim_create_user_command("TaskoList", function()
 					local task = entry.value.task
 					if task then
 						task.to_buffer(self.state.bufnr)
-						-- vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(content, "\n"))
 					else
 						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, { "Could not open file" })
 					end
