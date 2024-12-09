@@ -27,17 +27,15 @@ function Store:write(task)
 	local task_file = get_task_json_file(task.id)
 	task_file:write(vim.fn.json_encode(tableToSerializable(task)), "w")
 	local task_description_file = get_task_description_file(task.id)
-	task_description_file:write(task.description or "", "w")
+	local title_and_description = "# " .. task.title .. "\n" .. task.description
+	task_description_file:write(title_and_description, "w")
 	return { task_file = task_file.filename, task_description_file = task_description_file.filename }
 end
 
-function Store:update_description(task_id)
-	local task_description_file = get_task_description_file(task_id)
-	local task_file = get_task_json_file(task_id)
-	local task = Task:from_json(task_file:read())
-	local description = task_description_file:read()
-	task.description = description
-	Store:write(task)
+function Store:update_title_and_description(task_id)
+	local task = Store:get_task_from_paths(get_task_json_file(task_id), get_task_description_file(task_id))
+	local task_file = get_task_json_file(task.id)
+	task_file:write(vim.fn.json_encode(tableToSerializable(task)), "w")
 end
 
 function Store:delete(task_id)
@@ -49,13 +47,31 @@ function Store:get_task_by_id(task_id)
 	return Store:get_task_from_paths(get_task_json_file(task_id), get_task_description_file(task_id))
 end
 
+function Store:get_task_title_and_description(task_id)
+	return get_task_description_file(task_id):read()
+end
+
 function Store:get_task_from_paths(path_to_file, path_to_description)
 	assert(path_to_file, "path_to_file is required")
 	assert(path_to_description, "path_to_description is required")
 	local file_content = Path:new(path_to_file):read()
 	local description = Path:new(path_to_description):read()
 	local task = Task:from_json(file_content)
-	task.description = description
+	task.title = nil
+	task.description = nil
+
+	local i = 1
+	for line in description:gmatch("([^\n]*)\n?") do
+		if i == 1 then
+			local _, _, column = string.find(line, "^#%s*(.*)$")
+			task.title = column
+		elseif string.find(line, "^---") then
+		-- do nothing
+		else
+			task.description = (task.description or "") .. line .. "\n"
+		end
+		i = i + 1
+	end
 	return task
 end
 

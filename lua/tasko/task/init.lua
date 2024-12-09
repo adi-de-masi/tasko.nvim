@@ -16,20 +16,30 @@ function Task:new(id, title, description, priority, is_completed)
 	o.priority = priority or 4
 	o.is_completed = is_completed or false
 	o.to_buffer = function(buf)
+		-- first remove old ones
+		local existing_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+		local meta_lines_start = nil
+		local meta_lines_end = vim.api.nvim_buf_line_count(buf)
+		for index, value in ipairs(existing_lines) do
+			if string.match(value, "^---------------------$") then
+				meta_lines_start = index
+			end
+		end
+
+		if meta_lines_start ~= nil then
+			vim.api.nvim_buf_set_lines(buf, meta_lines_start - 1, meta_lines_end, false, {})
+		end
+
 		local lines = {
-			"# " .. o.title,
-			"",
-			o.description,
-			"",
 			"---------------------",
 			"-- id: " .. o.id,
 			"-- todoist_id: " .. (o.todoist_id or ""),
 			"-- priority: " .. o.priority,
 			"-- is_completed: " .. tostring(o.is_completed),
 		}
-		vim.api.nvim_buf_call(buf, function()
-			vim.api.nvim_put(lines, "l", false, false)
-		end)
+		local last_line = vim.api.nvim_buf_line_count(buf)
+		vim.api.nvim_buf_set_lines(buf, last_line, last_line, false, { "" })
+		vim.api.nvim_buf_set_lines(buf, last_line + 1, last_line + 1, false, lines)
 	end
 	return o
 end
