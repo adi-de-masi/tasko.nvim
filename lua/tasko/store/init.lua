@@ -61,7 +61,8 @@ function Store:get_task_from_paths(path_to_file, path_to_description)
 	task.description = nil
 
 	local i = 1
-	for line in description:gmatch("([^\n]*)\n?") do
+
+	for line in utils.split_by_newline(description) do
 		if i == 1 then
 			local _, _, column = string.find(line, "^#%s*(.*)$")
 			task.title = column
