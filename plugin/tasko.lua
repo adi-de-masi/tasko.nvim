@@ -17,6 +17,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
 		local has_todoist_id = task.todoist_id ~= nil
 		local display_string = (has_todoist_id and "📅 " or "")
 			.. (task.title or task.description or "(no title, no description)")
+
 		displayed_list[i] = {
 			value = { files = task_files[id], task = task },
 			display = display_string,
@@ -34,7 +35,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
 					return {
 						value = { files = entry.value.files, task = entry.value.task },
 						display = entry.display,
-						ordinal = entry.ordinal,
+						ordinal = entry.display,
 					}
 				end,
 			}),
