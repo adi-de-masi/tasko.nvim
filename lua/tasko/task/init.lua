@@ -47,16 +47,6 @@ function Task:new(id, title, description, priority, is_completed)
 	return o
 end
 
-function Task:from_json(json_lines)
-	local decoded = vim.json.decode(json_lines)
-	local id = decoded.id
-	local title = decoded.title
-	local description = decoded.description
-	local priority = decoded.priority or 1
-	local is_completed = decoded.is_completed or false
-	return Task:new(id, title, description, priority, is_completed)
-end
-
 function Task:from_current_buffer()
 	return Task:from_buffer(vim.api.nvim_get_current_buf())
 end
@@ -66,25 +56,27 @@ function Task:from_buffer(buf)
 	return Task:from_lines(lines)
 end
 
-function Task:from_lines(lines)
+function Task:from_lines(lines_as_string)
 	local task = Task:new()
-	local current_column = nil
-	local delimiter_regex = "^%s*(%[//%]: #)%s*%((.*)%)"
-	for _, line in ipairs(lines) do
-		local _, _, delimiter, column = string.find(line, delimiter_regex)
-		if delimiter then
-			current_column = column
-		elseif current_column ~= nil then
-			local empty_captures = not string.match(line, "^%s*$")
-			local value = string.gsub(line, "^#%s*", "")
-			if current_column == "description " then
-				local existing_description = (task["description"] ~= nil and task["description"] or "")
-				task["description"] = existing_description .. value .. "\n"
-			elseif value ~= "" and empty_captures ~= nil then
-				task[current_column] = value
+	task.id = nil
+	local delimiter_regex = "^%-%-%s+([%w%-_]+):%s+(%w+)"
+	local lines = utils.split_by_newline(lines_as_string)
+	for index, line in ipairs(lines) do
+		if index == 1 then
+			task.title = string.gsub(line, "^#%s*", "")
+		else
+			local key, value = string.match(line, delimiter_regex)
+			if key and value then
+				task[key] = value
+			elseif string.match(line, "^%-.*") == nil then
+				task["description"] = (task["description"] or "") .. "\n" .. line
 			end
 		end
 	end
+	if task.id == nil then
+		return nil
+	end
+	return task
 end
 
 return Task

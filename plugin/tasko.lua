@@ -9,9 +9,13 @@ local action_state = require("telescope.actions.state")
 local previewers = require("telescope.previewers")
 
 local function To_task(value)
+	local title = string.gsub((value["content"] or ""), "\n", "")
+	if title == nil or title == "" then
+		print("scheisendreck " .. value["id"])
+	end
 	return Task:new(
 		tonumber(value["id"]),
-		value["content"],
+		title,
 		value["description"],
 		tonumber(value["priority"]),
 		value["is_completed"]
@@ -22,14 +26,14 @@ vim.api.nvim_create_user_command("TaskoList", function()
 	local displayed_list = {}
 	local task_files = Store:list_tasks()
 	local i = 1
-	for id, task_file in pairs(task_files) do
-		local task = Store:get_task_from_paths(task_file.task_file, task_file.task_description_file)
+	for _, task_file in pairs(task_files) do
+		local task = Store:get_task_from_path(task_file)
 		local has_todoist_id = task.todoist_id ~= nil
 		local display_string = (has_todoist_id and "📅 " or "")
 			.. (task.title or task.description or "(no title, no description)")
 
 		displayed_list[i] = {
-			value = { files = task_files[id], task = task },
+			value = { file = task_file, task = task },
 			display = display_string,
 			ordinal = task.priority,
 		}
@@ -43,9 +47,10 @@ vim.api.nvim_create_user_command("TaskoList", function()
 				results = displayed_list,
 				entry_maker = function(entry)
 					return {
-						value = { files = entry.value.files, task = entry.value.task },
+						value = { file = entry.value.file, task = entry.value.task },
 						display = entry.display,
 						ordinal = entry.display,
+						filename = entry.value.file,
 					}
 				end,
 			}),
@@ -56,65 +61,31 @@ vim.api.nvim_create_user_command("TaskoList", function()
 					local selection = action_state.get_selected_entry()
 					actions.close(vim.api.nvim_get_current_buf()) -- Close the picker
 					if selection and selection.value and selection.value.task then
-						local task = selection.value.task
-						vim.cmd("edit " .. selection.value.files.task_description_file)
-						local buf = vim.api.nvim_get_current_buf()
-						task.to_buffer(buf)
-
-						if task.todoist_id ~= nil then
-							vim.api.nvim_buf_set_keymap(
-								buf,
-								"n",
-								"<leader>u",
-								":lua require('todoist'):new():update(" .. selection.value.task.todoist_id .. ")<CR>",
-								{ noremap = true, silent = true }
-							)
-						end
+						vim.cmd("edit " .. selection.filename)
 					else
 						print("No file selected")
 					end
 				end)
 				return true
 			end,
-			previewer = previewers.new_buffer_previewer({
-				define_preview = function(self, entry)
-					local task = entry.value.task
-					local buf = self.state.bufnr
-					if task then
-						local description_file_content = Store:get_task_title_and_description(task.id)
-						vim.api.nvim_buf_call(buf, function()
-							vim.api.nvim_put({ description_file_content }, "l", true, false)
-						end)
-						task.to_buffer(buf)
-					else
-						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, { "Could not open file" })
-					end
-				end,
-			}),
+			previewer = previewers.cat.new(opts),
 		})
 		:find()
 end, {})
 
 vim.api.nvim_create_user_command("TaskoSave", function()
 	local filename = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
-	local _, _, task_id = string.find(filename, ".*/(.*).md")
-	if not task_id then
-		print("Not a task")
-		return
-	end
-	Store:update_task_from_markdown(task_id)
 
-	local task = Store:get_task_by_id(task_id)
-	assert(task ~= nil, "task with id " .. task_id .. " not found!")
+	local task = Store:get_task_from_path(filename)
+	assert(task ~= nil, filename .. " cannot be interpreted as task")
 
 	if task.todoist_id == nil or task.todoist_id == "" then
-		print("new task! " .. task.todoist_id .. ".")
 		local updated_task = Todoist:new_task(task)
 		Store:write(To_task(updated_task))
 		local buf = vim.api.nvim_get_current_buf()
 		updated_task.to_buffer(buf)
 	else
-		Todoist:update(task.id)
+		Todoist:update(task)
 	end
 end, {})
 
@@ -122,8 +93,8 @@ vim.api.nvim_create_user_command("TaskoNew", function()
 	vim.ui.input({ prompt = "Task Title: " }, function(input)
 		local task = Task:new()
 		task.title = input
-		local files = Store:write(task)
-		vim.cmd("edit " .. files.task_description_file)
+		local file = Store:write(task)
+		vim.cmd("edit " .. file)
 		local buf = vim.api.nvim_get_current_buf()
 		task.to_buffer(buf)
 	end)

@@ -89,6 +89,7 @@ function tdst:new_task(task)
 	assert(status == 200, "Todoist did not answer with 200")
 	task.todoist_id = response["id"]
 	task.priority = response["priority"]
+	print("Successfully created task " .. task.todoist_id)
 	return task
 end
 
@@ -102,10 +103,7 @@ function tdst:_get_json_encoded_parameters(task)
 	})
 end
 
---- @param id string
-function tdst:update(id)
-	assert(id ~= nil, "id is required")
-	print("updating. tami siech. " .. id)
+function tdst:update(task)
 	local response = {}
 	local status = nil
 	local callback = function(res)
@@ -116,18 +114,12 @@ function tdst:update(id)
 	end
 
 	local headers = self:_get_headers(true)
-	print("updating. tami siech zum zweiten. " .. id)
-	local task = Store:get_task_by_id(id)
-	print("updating. tami siech zum dritten. " .. id)
 	local body = self:_get_json_encoded_parameters(task)
-	print("sending update to todoist now")
-	print(vim.inspect(body))
-	print(TASKS_URL .. "/" .. task.todoist_id)
 
 	local job = curl.post(TASKS_URL .. "/" .. task.todoist_id, { headers = headers, body = body, callback = callback })
 	job:wait()
-	print(vim.inspect(response))
 	assert(status == 200, "Todoist returned something other than 200: " .. status)
+	print("Updated task " .. task.todoist_id)
 	return response
 end
 

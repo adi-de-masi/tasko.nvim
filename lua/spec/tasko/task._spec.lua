@@ -7,21 +7,24 @@ describe("text to task", function()
 		assert.is_not_nil(task.id)
 	end)
 
-	it("converts a tasko file to a task", function()
-		local json_representation = [[
-      {
-        "id": 1,
-        "title": "This is my test task",
-        "description": "This is the body of my test task",
-        "priority": 4,
-        "is_completed": false
-      }
-    ]]
-		local task = Task:from_json(json_representation)
-		assert(task.id == 1, "Task Id couldn't be parsed.")
-		assert(task.title == "This is my test task", "Title couldn't be parsed.")
-		assert(task.description == "This is the body of my test task", "Description couldn't be parsed.")
-		assert(task.priority == 4, "Priority couldn't be parsed.")
-		assert(task.is_completed == false, "Is completed couldn't be parsed.")
+	it("creates a task from lines", function()
+		local task_lines = "# title for this test\n"
+			.. "\n"
+			.. "A task description example\n"
+			.. "---------------------\n"
+			.. "-- id: 1\n"
+			.. "-- todoist_id: 123\n"
+			.. "-- priority: 3\n"
+			.. "-- is_completed: true\n"
+		local task = Task:from_lines(task_lines)
+		assert(task.id == "1", "wrong id: " .. task.id)
+		assert(task.todoist_id == "123", "wrong todoist_id")
+		assert(task.title == "title for this test", "wrong title")
+		assert(
+			task.description:gsub("\n", "") == "A task description example",
+			"wrong description: " .. task.description
+		)
+		assert(task.priority == "3", "wrong priority")
+		assert(task.is_completed == "true", "wrong is_completed")
 	end)
 end)
