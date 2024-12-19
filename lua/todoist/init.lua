@@ -69,10 +69,16 @@ end
 
 --- @param id string
 function tdst:complete(id)
+	local status = nil
+	local callback = function(res)
+		status = res.status
+	end
 	local headers = self:_get_headers(false)
 	local url = TASKS_URL .. "/" .. id .. "/close"
-	local res = curl.post(url, { headers = headers })
-	return res
+	local job = curl.post(url, { headers = headers, callback = callback })
+	job:wait()
+	assert(status < 300, "Todoist did not answer with 200")
+	print("marked task as done")
 end
 
 function tdst:new_task(task)

@@ -53,7 +53,7 @@ end
 
 function Task:from_buffer(buf)
 	local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-	return Task:from_lines(lines)
+	return Task:from_lines(table.concat(lines, "\n"))
 end
 
 function Task:from_lines(lines_as_string)

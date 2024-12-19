@@ -101,21 +101,13 @@ vim.api.nvim_create_user_command("TaskoNew", function()
 end, {})
 
 vim.api.nvim_create_user_command("TaskoDone", function()
-	local current_buf = vim.api.nvim_get_current_buf()
-	local now = os.date("!%Y-%m-%dT%TZ")
-	if type(now) == "string" then
-		print("now is " .. now)
-		vim.api.nvim_buf_call(current_buf, function()
-			vim.api.nvim_buf_set_lines(current_buf, -1, -1, true, { "", "[//]: # (done)", now })
-		end)
-	end
 	local task = Task:from_current_buffer()
-	if task == nil then
-		print("cannot parse a task from this buffer")
-		return
-	end
-	if task.todoist_id ~= nil then
+	if task ~= nil and task.todoist_id ~= nil then
 		Todoist:complete(task.todoist_id)
+		task.is_completed = true
+		Store:write(task)
+		local buf = vim.api.nvim_get_current_buf()
+		task.to_buffer(buf)
 	end
 end, {})
 
