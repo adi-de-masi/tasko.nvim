@@ -5,16 +5,14 @@ function Task:new(id, title, description, priority, is_completed)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
-	if type(id) == "number" then
-		o.todoist_id = id
-	else
-		o.todoist_id = nil
-	end
 	o.id = id or utils.uuid()
 	o.title = title or ""
 	o.description = description or ""
 	o.priority = priority or 4
 	o.is_completed = is_completed or false
+	o.set_provider_id = function(provider_id)
+		o.provider_id = provider_id
+	end
 	o.to_buffer = function(buf)
 		-- first remove old ones
 		local existing_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -39,7 +37,7 @@ function Task:new(id, title, description, priority, is_completed)
 		return {
 			"---------------------",
 			"-- id: " .. o.id,
-			"-- todoist_id: " .. (o.todoist_id or ""),
+			"-- provider_id: " .. (o.provider_id or ""),
 			"-- priority: " .. (o.priority or 4),
 			"-- is_completed: " .. tostring(o.is_completed or false),
 		}

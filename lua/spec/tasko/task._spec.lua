@@ -13,12 +13,12 @@ describe("text to task", function()
 			.. "A task description example\n"
 			.. "---------------------\n"
 			.. "-- id: 1\n"
-			.. "-- todoist_id: 123\n"
+			.. "-- provider_id: 123\n"
 			.. "-- priority: 3\n"
 			.. "-- is_completed: true\n"
 		local task = Task:from_lines(task_lines)
 		assert(task.id == "1", "wrong id: " .. task.id)
-		assert(task.todoist_id == "123", "wrong todoist_id")
+		assert(task.provider_id == "123", "wrong provider_id")
 		assert(task.title == "title for this test", "wrong title")
 		assert(
 			task.description:gsub("\n", "") == "A task description example",

@@ -1,6 +1,6 @@
 local Store = require("tasko.store")
 local Task = require("tasko.task")
-local Todoist = require("todoist"):new()
+local config = require("lazy.core.config").plugins["tasko"].opts
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
@@ -8,35 +8,23 @@ local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local previewers = require("telescope.previewers")
 
-local function To_task(value)
-	local title = string.gsub((value["content"] or ""), "\n", "")
-	if title == nil or title == "" then
-		print("scheisendreck " .. value["id"])
-	end
-	return Task:new(
-		tonumber(value["id"]),
-		title,
-		value["description"],
-		tonumber(value["priority"]),
-		value["is_completed"]
-	)
-end
-
 vim.api.nvim_create_user_command("TaskoList", function()
 	local displayed_list = {}
 	local task_files = Store:list_tasks()
 	local i = 1
 	for _, task_file in pairs(task_files) do
 		local task = Store:get_task_from_path(task_file)
-		local has_todoist_id = task.todoist_id ~= nil
-		local display_string = (has_todoist_id and "📅 " or "")
-			.. (task.title or task.description or "(no title, no description)")
+		if task ~= nil then
+			local has_provider_id = task.provider_id ~= nil
+			local display_string = (has_provider_id and "📅 " or "")
+				.. (task.title or task.description or "(no title, no description)")
 
-		displayed_list[i] = {
-			value = { file = task_file, task = task },
-			display = display_string,
-			ordinal = task.priority,
-		}
+			displayed_list[i] = {
+				value = { file = task_file, task = task },
+				display = display_string,
+				ordinal = task.priority,
+			}
+		end
 		i = i + 1
 	end
 	local opts = {}
@@ -73,19 +61,26 @@ vim.api.nvim_create_user_command("TaskoList", function()
 		:find()
 end, {})
 
-vim.api.nvim_create_user_command("TaskoSave", function()
+vim.api.nvim_create_user_command("TaskoSync", function()
 	local filename = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
 
 	local task = Store:get_task_from_path(filename)
 	assert(task ~= nil, filename .. " cannot be interpreted as task")
 
-	if task.todoist_id == nil or task.todoist_id == "" then
-		local updated_task = Todoist:new_task(task)
-		Store:write(To_task(updated_task))
-		local buf = vim.api.nvim_get_current_buf()
-		updated_task.to_buffer(buf)
-	else
-		Todoist:update(task)
+	if config and config.provider then
+		local provider = require("tasko.providers." .. config.provider)
+		if provider == nil then
+			print("Provider not found: " .. config.provider)
+			return
+		end
+		if task.provider_id == nil or task.provider_id == "" then
+			local updated_task = provider:new_task(task)
+			Store:write(updated_task)
+			local buf = vim.api.nvim_get_current_buf()
+			updated_task.to_buffer(buf)
+		else
+			provider:update(task)
+		end
 	end
 end, {})
 
@@ -102,8 +97,9 @@ end, {})
 
 vim.api.nvim_create_user_command("TaskoDone", function()
 	local task = Task:from_current_buffer()
-	if task ~= nil and task.todoist_id ~= nil then
-		Todoist:complete(task.todoist_id)
+	if task ~= nil and task.provider_id ~= nil then
+		local provider = require("tasko.providers." .. config.provider)
+		provider:complete(task.provider_id)
 		task.is_completed = true
 		Store:write(task)
 		local buf = vim.api.nvim_get_current_buf()
@@ -112,9 +108,14 @@ vim.api.nvim_create_user_command("TaskoDone", function()
 end, {})
 
 vim.api.nvim_create_user_command("TaskoFetchTasks", function()
-	local tasks = Todoist:query_all("tasks")
+	local provider = require("tasko.providers." .. config.provider)
+	local tasks = provider:query_all("tasks")
 	for _, value in ipairs(tasks) do
-		local task = To_task(value)
+		local task = provider:to_task(value)
 		Store:write(task)
 	end
+end, {})
+
+vim.api.nvim_create_user_command("TaskoTest", function()
+	print(vim.inspect(config))
 end, {})
