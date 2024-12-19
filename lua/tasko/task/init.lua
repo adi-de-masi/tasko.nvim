@@ -30,16 +30,19 @@ function Task:new(id, title, description, priority, is_completed)
 			vim.api.nvim_buf_set_lines(buf, meta_lines_start - 1, meta_lines_end, false, {})
 		end
 
-		local lines = {
-			"---------------------",
-			"-- id: " .. o.id,
-			"-- todoist_id: " .. (o.todoist_id or ""),
-			"-- priority: " .. o.priority,
-			"-- is_completed: " .. tostring(o.is_completed),
-		}
+		local lines = o.to_params_as_md_comment()
 		local last_line = vim.api.nvim_buf_line_count(buf)
 		vim.api.nvim_buf_set_lines(buf, last_line, last_line, false, { "" })
 		vim.api.nvim_buf_set_lines(buf, last_line + 1, last_line + 1, false, lines)
+	end
+	o.to_params_as_md_comment = function()
+		return {
+			"---------------------",
+			"-- id: " .. o.id,
+			"-- todoist_id: " .. (o.todoist_id or ""),
+			"-- priority: " .. (o.priority or 4),
+			"-- is_completed: " .. tostring(o.is_completed or false),
+		}
 	end
 	return o
 end

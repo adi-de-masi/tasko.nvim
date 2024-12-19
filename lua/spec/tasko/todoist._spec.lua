@@ -1,24 +1,40 @@
-local Todoist = require('todoist')
-local Task = require('tasko.task')
-local curl = require("plenary.curl")
+local Todoist = require("todoist")
+local Task = require("tasko.task")
+local Store = require("tasko.store")
+describe("todoist api", function()
+	it("lists all tasks", function()
+		local T = Todoist:new()
+		local tasks = T:query_all("tasks")
+		for key, value in ipairs(tasks) do
+			local task = Task:new(value["id"], value["content"], value["description"])
+			tasks[key] = task
+		end
+		assert.is_string(
+			tasks[1].title,
+			"The first task has no title. This could mean, Adi has no tasks currently or we have an issue"
+		)
+	end)
 
-describe('todoist api', function()
-  it('plenary.curl basic learning test', function()
-    local query2 = { name = "john Doe", key = "123456" }
-    local res = curl.get("https://postman-echo.com/get", {
-      query = query2,
-    })
-    assert(res.status == 200, "gopferdeli")
-  end)
+	it("converts todoist to tasko", function()
+		local T = Todoist:new()
+		local todoist_response =
+			'{"id":"8684382473","assigner_id":null,"assignee_id":null,"project_id":"2309463793","section_id":null,"parent_id":null,"order":62,"content":"test eins zwei","description":"deeescription","is_completed":false,"labels":[],"priority":4,"comment_count":0,"creator_id":"43441817","created_at":"2024-12-16T10:21:52.049422Z","due":null,"url":"https://app.todoist.com/app/task/8684382473","duration":null,"deadline":null}'
+		local task = T:to_task(todoist_response)
+		assert(task.todoist_id == "8684382473", "The todoist id is not correct: ")
+		assert(task.id == "8684382473", "The tasko id is not set to its todoist counterpart")
+		assert(task.title == "test eins zwei", "The title is not correct")
+		assert(task.description == "deeescription", "The description is not correct")
+		assert(task.priority == 4, "The priority is not correct")
+		assert(task.is_completed == false, "The task is completed but shouldn't be")
+	end)
 
-  it('lists all tasks', function()
-    local T = Todoist:new()
-    local tasks = T:query_all('tasks')
-    for key, value in ipairs(tasks) do
-      local task = Task:new(value["id"], value["content"], value["description"])
-      tasks[key] = task
-    end
-    assert.is_string(tasks[1].title,
-      'The first task has no title. This could mean, Adi has no tasks currently or we have an issue')
-  end)
+	it("creates a task", function()
+		local T = Todoist:new()
+		local task = Task:new("id-flurrrrrr", "title-flurrrrrr", "description-flurrrrrr")
+		Store:write(task)
+		local response = T:new_task(task)
+		-- TODO: Remove task from Todoist
+		Store:delete(task.id)
+		assert(response["id"] ~= nil, "The task was not created")
+	end)
 end)

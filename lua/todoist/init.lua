@@ -75,36 +75,59 @@ function tdst:complete(id)
 	return res
 end
 
-function tdst:new_task(params)
-	local headers = self:_get_headers(true)
-	local body = vim.fn.json_encode(params)
-	local res = curl.post(TASKS_URL, { headers = headers, body = body })
-	return res
-end
-
---- @param id string
-function tdst:update(id)
+function tdst:new_task(task)
 	local response = {}
 	local status = nil
 	local callback = function(res)
 		status = res.status
 		response = vim.json.decode(res["body"])
 	end
-
 	local headers = self:_get_headers(true)
-	local task = Store:get_task_by_id(id)
-	local body = vim.fn.json_encode({
+	local body = self:_get_json_encoded_parameters(task)
+	local job = curl.post(TASKS_URL, { headers = headers, body = body, callback = callback })
+	job:wait()
+	assert(status == 200, "Todoist did not answer with 200")
+	task.todoist_id = response["id"]
+	task.priority = response["priority"]
+	return task
+end
+
+function tdst:_get_json_encoded_parameters(task)
+	return vim.fn.json_encode({
 		content = task.title,
 		id = task.todoist_id,
 		description = task.description,
 		priority = task.priority,
 		is_completed = task.is_completed,
 	})
-	print("updating todoist now! ")
-	local job = curl.post(TASKS_URL .. "/" .. id, { headers = headers, body = body, callback = callback })
+end
+
+--- @param id string
+function tdst:update(id)
+	assert(id ~= nil, "id is required")
+	print("updating. tami siech. " .. id)
+	local response = {}
+	local status = nil
+	local callback = function(res)
+		status = res.status
+		if res.status < 300 then
+			response = vim.json.decode(res["body"])
+		end
+	end
+
+	local headers = self:_get_headers(true)
+	print("updating. tami siech zum zweiten. " .. id)
+	local task = Store:get_task_by_id(id)
+	print("updating. tami siech zum dritten. " .. id)
+	local body = self:_get_json_encoded_parameters(task)
+	print("sending update to todoist now")
+	print(vim.inspect(body))
+	print(TASKS_URL .. "/" .. task.todoist_id)
+
+	local job = curl.post(TASKS_URL .. "/" .. task.todoist_id, { headers = headers, body = body, callback = callback })
 	job:wait()
+	print(vim.inspect(response))
 	assert(status == 200, "Todoist returned something other than 200: " .. status)
-	print("update complete")
 	return response
 end
 
