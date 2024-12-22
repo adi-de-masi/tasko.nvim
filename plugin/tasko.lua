@@ -14,9 +14,9 @@ vim.api.nvim_create_user_command("TaskoList", function()
 	local i = 1
 	for _, task_file in pairs(task_files) do
 		local task = Store:get_task_from_path(task_file)
-		if task ~= nil then
+		if task ~= nil and tostring(task.is_completed) ~= "true" then
 			local has_provider_id = task.provider_id ~= nil
-			local display_string = (has_provider_id and "📅 " or "")
+			local display_string = (has_provider_id and "✅ " or "")
 				.. (task.title or task.description or "(no title, no description)")
 
 			displayed_list[i] = {
@@ -75,9 +75,9 @@ vim.api.nvim_create_user_command("TaskoSync", function()
 		end
 		if task.provider_id == nil or task.provider_id == "" then
 			local updated_task = provider:new_task(task)
-			Store:write(updated_task)
 			local buf = vim.api.nvim_get_current_buf()
 			updated_task.to_buffer(buf)
+			vim.cmd("write")
 		else
 			provider:update(task)
 		end

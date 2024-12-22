@@ -5,12 +5,12 @@ local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Store = {}
 Store.TASK_LIST_FILENAME = "*tasks*.md"
 
-local get_task_description_file = function(task_id)
+local get_task_file = function(task_id)
 	return Path:new(utils.get_or_create_tasko_directory(), task_id .. ".md")
 end
 
 function Store:write(task)
-	local task_file = get_task_description_file(task.id)
+	local task_file = get_task_file(task.id)
 	local title_and_description = "# " .. task.title
 	if task.description and task.description ~= "" then
 		title_and_description = title_and_description .. "\n" .. task.description
