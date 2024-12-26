@@ -3,7 +3,6 @@ local Task = require("tasko.task")
 local utils = require("tasko.utils")
 local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Store = {}
-Store.TASK_LIST_FILENAME = "*tasks*.md"
 
 local get_task_file = function(task_id)
 	return Path:new(utils.get_or_create_tasko_directory(), task_id .. ".md")
@@ -22,8 +21,6 @@ end
 
 function Store:delete(task_id)
 	local file_path = vim.fs.joinpath(tasko_base_dir, task_id .. ".md")
-	local json_path = vim.fs.joinpath(tasko_base_dir, task_id .. ".json")
-	Path:new(json_path):rm()
 	return Path:new(file_path):rm()
 end
 

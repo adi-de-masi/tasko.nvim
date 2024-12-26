@@ -61,6 +61,18 @@ vim.api.nvim_create_user_command("TaskoList", function()
 		:find()
 end, {})
 
+local function get_provider()
+	if config and config.provider then
+		local provider = require("tasko.providers." .. config.provider)
+		if provider == nil then
+			print("Provider not found: " .. config.provider)
+			return {}
+		end
+		return provider
+	end
+	return {}
+end
+
 vim.api.nvim_create_user_command("TaskoSync", function()
 	local filename = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
 
@@ -68,11 +80,7 @@ vim.api.nvim_create_user_command("TaskoSync", function()
 	assert(task ~= nil, filename .. " cannot be interpreted as task")
 
 	if config and config.provider then
-		local provider = require("tasko.providers." .. config.provider)
-		if provider == nil then
-			print("Provider not found: " .. config.provider)
-			return
-		end
+		local provider = get_provider()
 		if task.provider_id == nil or task.provider_id == "" then
 			local updated_task = provider:new_task(task)
 			local buf = vim.api.nvim_get_current_buf()
@@ -98,17 +106,18 @@ end, {})
 vim.api.nvim_create_user_command("TaskoDone", function()
 	local task = Task:from_current_buffer()
 	if task ~= nil and task.provider_id ~= nil then
-		local provider = require("tasko.providers." .. config.provider)
+		local provider = get_provider()
 		provider:complete(task.provider_id)
 		task.is_completed = true
 		Store:write(task)
 		local buf = vim.api.nvim_get_current_buf()
 		task.to_buffer(buf)
+		vim.cmd("write")
 	end
 end, {})
 
 vim.api.nvim_create_user_command("TaskoFetchTasks", function()
-	local provider = require("tasko.providers." .. config.provider)
+	local provider = get_provider()
 	local tasks = provider:query_all("tasks")
 	for _, value in ipairs(tasks) do
 		local task = provider:to_task(value)
@@ -117,5 +126,13 @@ vim.api.nvim_create_user_command("TaskoFetchTasks", function()
 end, {})
 
 vim.api.nvim_create_user_command("TaskoTest", function()
-	print(vim.inspect(config))
+	local task_files = Store:list_tasks()
+	local i = 1
+	for _, task_file in pairs(task_files) do
+		print("i: " .. i)
+		print("file: " .. task_file)
+		local task = Store:get_task_from_path(task_file)
+		print("task: " .. vim.inspect(task))
+		i = i + 1
+	end
 end, {})
