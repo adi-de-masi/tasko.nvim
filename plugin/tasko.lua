@@ -37,7 +37,13 @@ vim.api.nvim_create_user_command("TaskoList", function()
 					return {
 						value = { file = entry.value.file, task = entry.value.task },
 						display = entry.display,
-						ordinal = entry.display,
+						ordinal = entry.display
+								.. entry.value.task.description
+								.. "priority: "
+								.. entry.value.task.priority
+								.. " "
+								.. entry.value.task.provider_id
+							or "" .. " " .. entry.value.task.id,
 						filename = entry.value.file,
 					}
 				end,
