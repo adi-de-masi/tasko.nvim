@@ -1,6 +1,6 @@
 local Store = require("tasko.store")
 local Task = require("tasko.task")
-local config = require("lazy.core.config").plugins["tasko"].opts
+local config = require("lazy.core.config").plugins["tasko"].config
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
