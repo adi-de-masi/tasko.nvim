@@ -1,9 +1,8 @@
 local Store = require("tasko.store")
 local Task = require("tasko.task")
-local config = require("lazy.core.config").plugins["tasko"].config
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
-local conf = require("telescope.config").values
+local telescope_conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local previewers = require("telescope.previewers")
@@ -27,7 +26,9 @@ vim.api.nvim_create_user_command("TaskoList", function()
 		end
 		i = i + 1
 	end
-	local opts = {}
+	local opts = {
+		cache_picker = false,
+	}
 	pickers
 		.new(opts, {
 			prompt_title = "All Tasks",
@@ -48,7 +49,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
 					}
 				end,
 			}),
-			sorter = conf.generic_sorter(opts),
+			sorter = telescope_conf.generic_sorter(opts),
 			attach_mappings = function(_, _)
 				-- Define what happens on Enter
 				actions.select_default:replace(function()
@@ -68,6 +69,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
 end, {})
 
 local function get_provider()
+	local config = require("tasko").config
 	if config and config.provider then
 		local provider = require("tasko.providers." .. config.provider)
 		if provider == nil then
@@ -84,17 +86,14 @@ vim.api.nvim_create_user_command("TaskoSync", function()
 
 	local task = Store:get_task_from_path(filename)
 	assert(task ~= nil, filename .. " cannot be interpreted as task")
-
-	if config and config.provider then
-		local provider = get_provider()
-		if task.provider_id == nil or task.provider_id == "" then
-			local updated_task = provider:new_task(task)
-			local buf = vim.api.nvim_get_current_buf()
-			updated_task.to_buffer(buf)
-			vim.cmd("write")
-		else
-			provider:update(task)
-		end
+	local provider = get_provider()
+	if task.provider_id == nil or task.provider_id == "" then
+		local updated_task = provider:new_task(task)
+		local buf = vim.api.nvim_get_current_buf()
+		updated_task.to_buffer(buf)
+		vim.cmd("write")
+	else
+		provider:update(task)
 	end
 end, {})
 
@@ -115,7 +114,6 @@ vim.api.nvim_create_user_command("TaskoDone", function()
 		local provider = get_provider()
 		provider:complete(task.provider_id)
 		task.is_completed = true
-		Store:write(task)
 		local buf = vim.api.nvim_get_current_buf()
 		task.to_buffer(buf)
 		vim.cmd("write")
