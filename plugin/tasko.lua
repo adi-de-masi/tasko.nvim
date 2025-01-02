@@ -1,69 +1,30 @@
 local Store = require "tasko.store"
 local Task = require "tasko.task"
-local pickers = require "telescope.pickers"
-local finders = require "telescope.finders"
-local telescope_conf = require("telescope.config").values
-local actions = require "telescope.actions"
-local action_state = require "telescope.actions.state"
-local previewers = require "telescope.previewers"
+local utils = require "tasko.utils"
 
 vim.api.nvim_create_user_command("TaskoList", function()
-  local displayed_list = {}
-  local task_files = Store:list_tasks()
-  local i = 1
-  for _, task_file in pairs(task_files) do
-    local task = Store:get_task_from_path(task_file)
-    if task ~= nil and tostring(task.is_completed) ~= "true" then
-      local has_provider_id = task.provider_id ~= nil
-      local display_string = (has_provider_id and "✅ " or "")
-        .. (task.title or task.description or "(no title, no description)")
-      displayed_list[i] = {
-        value = { file = task_file, task = task },
-        display = display_string,
-        ordinal = task.priority,
-      }
-    end
-    i = i + 1
-  end
-  local opts = {
-    cache_picker = false,
+  local opts = {}
+
+  local files_dir = utils.get_or_create_tasko_directory()
+  require("telescope.builtin").find_files {
+    cwd = files_dir,
+    hidden = opts.hidden or true,
+    no_ignore = opts.no_ignore or true,
+    entry_maker = function(task_file)
+      local path_to_task = vim.fs.joinpath(files_dir, task_file)
+      local task = Store:get_task_from_path(path_to_task)
+      if task ~= nil and tostring(task.is_completed) ~= "true" then
+        local has_provider_id = task.provider_id ~= nil
+        local display_string = (has_provider_id and "✅ " or "")
+          .. (task.title or task.description or "(no title, no description)")
+        return {
+          value = path_to_task,
+          display = display_string,
+          ordinal = display_string .. task.description .. "priority: " .. task.priority .. " " .. task.id,
+        }
+      end
+    end,
   }
-  pickers
-    .new(opts, {
-      prompt_title = "All Tasks",
-      finder = finders.new_table {
-        results = displayed_list,
-        entry_maker = function(entry)
-          return {
-            value = { file = entry.value.file, task = entry.value.task },
-            display = entry.display,
-            ordinal = entry.display
-              .. entry.value.task.description
-              .. "priority: "
-              .. entry.value.task.priority
-              .. " "
-              .. entry.value.task.id,
-            filename = entry.value.file,
-          }
-        end,
-      },
-      sorter = telescope_conf.generic_sorter(opts),
-      attach_mappings = function(_, _)
-        -- Define what happens on Enter
-        actions.select_default:replace(function()
-          local selection = action_state.get_selected_entry()
-          actions.close(vim.api.nvim_get_current_buf()) -- Close the picker
-          if selection and selection.value and selection.value.task then
-            vim.cmd("edit " .. selection.filename)
-          else
-            print "No file selected"
-          end
-        end)
-        return true
-      end,
-      previewer = previewers.cat.new(opts),
-    })
-    :find()
 end, {})
 
 local function get_provider()
@@ -78,7 +39,7 @@ local function get_provider()
   return require "tasko.providers.default"
 end
 
-vim.api.nvim_create_user_command("TaskoSync", function()
+vim.api.nvim_create_user_command("TaskoPush", function()
   local filename = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
 
   local task = Store:get_task_from_path(filename)

@@ -66,7 +66,7 @@ function Task:from_lines(lines_as_string)
       local key, value = string.match(line, delimiter_regex)
       if key and value then
         task[key] = value
-      elseif string.match(line, "^%-.*") == nil then
+      elseif string.match(line, "^%-.*") == nil and string.match(line, "^\n") == nil then
         task["description"] = (task["description"] or "") .. "\n" .. line
       end
     end
