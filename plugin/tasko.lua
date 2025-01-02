@@ -45,7 +45,8 @@ vim.api.nvim_create_user_command("TaskoPush", function()
   local task = Store:get_task_from_path(filename)
   assert(task ~= nil, filename .. " cannot be interpreted as task")
   local provider = get_provider()
-  if task.provider_id == nil or task.provider_id == "" then
+  local config = require("tasko").config
+  if (config and config.provider) and (task.provider_id == nil or task.provider_id == "") then
     local updated_task = provider:new_task(task)
     local buf = vim.api.nvim_get_current_buf()
     updated_task.to_buffer(buf)
@@ -60,8 +61,9 @@ vim.api.nvim_create_user_command("TaskoFetch", function()
 
   local task = Store:get_task_from_path(filename)
   assert(task ~= nil, filename .. " cannot be interpreted as task")
+  local config = require("tasko").config
   local provider = get_provider()
-  if task.provider_id ~= nil then
+  if task.provider_id ~= nil and config and config.provider then
     local updated_task = provider:get_task_by_id(task.provider_id)
     local buf = vim.api.nvim_get_current_buf()
     updated_task.to_buffer(buf)
@@ -83,7 +85,7 @@ end, {})
 
 vim.api.nvim_create_user_command("TaskoDone", function()
   local task = Task:from_current_buffer()
-  if task ~= nil and task.provider_id ~= nil then
+  if task ~= nil then
     local provider = get_provider()
     provider:complete(task.provider_id)
     task.is_completed = true
