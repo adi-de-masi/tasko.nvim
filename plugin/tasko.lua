@@ -117,7 +117,7 @@ vim.api.nvim_create_user_command("TaskoDone", function()
   end
 end, {})
 
-vim.api.nvim_create_user_command("TaskoFetchTasks", function()
+vim.api.nvim_create_user_command("TaskoFetchAll", function()
   local provider = get_provider()
   local tasks = provider:query_all "tasks"
   for _, value in ipairs(tasks) do
