@@ -95,6 +95,11 @@ function tdst:query_all(type)
   return response
 end
 
+function tdst:get_task_by_id(id)
+  local todoist_response = exec_curl("get", vim.fs.joinpath(TASKS_URL, id))
+  return self:to_task(todoist_response)
+end
+
 --- @param id string
 function tdst:complete(id)
   local status = nil

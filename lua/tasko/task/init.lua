@@ -15,23 +15,17 @@ function Task:new(id, title, description, priority, is_completed)
   end
   o.to_buffer = function(buf)
     -- first remove old ones
-    local existing_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-    local meta_lines_start = nil
-    local meta_lines_end = vim.api.nvim_buf_line_count(buf)
-    for index, value in ipairs(existing_lines) do
-      if string.match(value, "^---------------------$") then
-        meta_lines_start = index
-      end
-    end
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
 
-    if meta_lines_start ~= nil then
-      vim.api.nvim_buf_set_lines(buf, meta_lines_start - 1, meta_lines_end, false, {})
-    end
+    vim.api.nvim_buf_set_lines(buf, 0, 1, false, { "# " .. o.title })
 
-    local lines = o.to_params_as_md_comment()
+    local description_as_table = utils.split_by_newline(o.description)
+    vim.api.nvim_buf_set_lines(buf, 2, #description_as_table, false, description_as_table)
+
+    local param_lines = o.to_params_as_md_comment()
     local last_line = vim.api.nvim_buf_line_count(buf)
     vim.api.nvim_buf_set_lines(buf, last_line, last_line, false, { "" })
-    vim.api.nvim_buf_set_lines(buf, last_line + 1, last_line + 1, false, lines)
+    vim.api.nvim_buf_set_lines(buf, last_line + 1, last_line + 1, false, param_lines)
   end
   o.to_params_as_md_comment = function()
     return {

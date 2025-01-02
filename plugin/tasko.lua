@@ -15,11 +15,11 @@ vim.api.nvim_create_user_command("TaskoList", function()
       local task = Store:get_task_from_path(path_to_task)
       if task ~= nil and tostring(task.is_completed) ~= "true" then
         local has_provider_id = task.provider_id ~= nil
-        local display_string = (has_provider_id and "✅ " or "")
+        local display_string = (has_provider_id and "[P] " or "")
           .. (task.title or task.description or "(no title, no description)")
         return {
           value = path_to_task,
-          display = display_string,
+          display = task.priority .. " " .. display_string,
           ordinal = display_string .. task.description .. "priority: " .. task.priority .. " " .. task.id,
         }
       end
@@ -52,6 +52,21 @@ vim.api.nvim_create_user_command("TaskoPush", function()
     vim.cmd "write"
   else
     provider:update(task)
+  end
+end, {})
+
+vim.api.nvim_create_user_command("TaskoFetch", function()
+  local filename = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+
+  local task = Store:get_task_from_path(filename)
+  assert(task ~= nil, filename .. " cannot be interpreted as task")
+  local provider = get_provider()
+  if task.provider_id ~= nil then
+    local updated_task = provider:get_task_by_id(task.provider_id)
+    local buf = vim.api.nvim_get_current_buf()
+    updated_task.to_buffer(buf)
+    vim.cmd "write"
+    print "updated task from provider"
   end
 end, {})
 
