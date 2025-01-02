@@ -40,7 +40,8 @@ vim.api.nvim_create_user_command("TaskoList", function()
             ordinal = entry.display
               .. entry.value.task.description
               .. "priority: "
-              .. entry.value.task.priority " "
+              .. entry.value.task.priority
+              .. " "
               .. entry.value.task.id,
             filename = entry.value.file,
           }
@@ -69,13 +70,12 @@ local function get_provider()
   local config = require("tasko").config
   if config and config.provider then
     local provider = require("tasko.providers." .. config.provider)
-    if provider == nil then
-      print("Provider not found: " .. config.provider)
-      return {}
+    if provider ~= nil then
+      return provider
     end
-    return provider
+    print("Provider not found: " .. config.provider)
   end
-  return {}
+  return require "tasko.providers.default"
 end
 
 vim.api.nvim_create_user_command("TaskoSync", function()
@@ -123,17 +123,5 @@ vim.api.nvim_create_user_command("TaskoFetchTasks", function()
   for _, value in ipairs(tasks) do
     local task = provider:to_task(value)
     Store:write(task)
-  end
-end, {})
-
-vim.api.nvim_create_user_command("TaskoTest", function()
-  local task_files = Store:list_tasks()
-  local i = 1
-  for _, task_file in pairs(task_files) do
-    print("i: " .. i)
-    print("file: " .. task_file)
-    local task = Store:get_task_from_path(task_file)
-    print("task: " .. vim.inspect(task))
-    i = i + 1
   end
 end, {})
