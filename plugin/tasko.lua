@@ -1,6 +1,23 @@
 local Store = require "tasko.store"
-local Task = require "tasko.task"
 local utils = require "tasko.utils"
+local telescope_sorters = require "telescope.sorters"
+
+local generic_fuzzy_sorter = telescope_sorters.get_generic_fuzzy_sorter()
+local custom_sorter = telescope_sorters.Sorter:new {
+  scoring_function = function(prompt, ordinal, entry)
+    local entry_prio = tonumber(entry:match "^(%d+)") or 0
+    if prompt ~= nil and type(prompt) == "string" then
+      local prompt_prio_raw = string.match(prompt, "^(%d+)") or 0
+      local prompt_prio = tonumber(prompt_prio_raw)
+      if entry_prio == prompt_prio then
+        return generic_fuzzy_sorter.scoring_function(prompt, ordinal, entry)
+      end
+    else
+      return generic_fuzzy_sorter.scoring_function(prompt, ordinal, entry)
+    end
+    return math.huge
+  end,
+}
 
 vim.api.nvim_create_user_command("TaskoList", function()
   local opts = {}
@@ -8,8 +25,9 @@ vim.api.nvim_create_user_command("TaskoList", function()
   local files_dir = utils.get_or_create_tasko_directory()
   require("telescope.builtin").find_files {
     cwd = files_dir,
-    hidden = opts.hidden or true,
+    hidden = opts.hidden or false,
     no_ignore = opts.no_ignore or true,
+    sorter = custom_sorter,
     entry_maker = function(task_file)
       local path_to_task = vim.fs.joinpath(files_dir, task_file)
       local task = Store:get_task_from_path(path_to_task)
@@ -20,7 +38,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
         return {
           value = path_to_task,
           display = task.priority .. " " .. display_string,
-          ordinal = display_string .. task.description .. "priority: " .. task.priority .. " " .. task.id,
+          ordinal = task.priority .. " " .. display_string .. " " .. task.description .. " " .. task.id,
         }
       end
     end,
