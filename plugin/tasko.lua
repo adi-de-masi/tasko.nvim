@@ -5,17 +5,20 @@ local telescope_sorters = require "telescope.sorters"
 local generic_fuzzy_sorter = telescope_sorters.get_generic_fuzzy_sorter()
 local custom_sorter = telescope_sorters.Sorter:new {
   scoring_function = function(prompt, ordinal, entry)
-    local entry_prio = tonumber(entry:match "^(%d+)") or 0
+    local entry_prio = tonumber(entry:match "^(%d+)") or 4
+    local boost = 1
     if prompt ~= nil and type(prompt) == "string" then
       local prompt_prio_raw = string.match(prompt, "^(%d+)") or 0
       local prompt_prio = tonumber(prompt_prio_raw)
-      if entry_prio == prompt_prio then
-        return generic_fuzzy_sorter.scoring_function(prompt, ordinal, entry)
+      if entry_prio and prompt_prio and entry_prio > prompt_prio then
+        boost = 10
       end
-    else
-      return generic_fuzzy_sorter.scoring_function(prompt, ordinal, entry)
     end
-    return math.huge
+    local score = generic_fuzzy_sorter.scoring_function(prompt, ordinal, entry)
+    if prompt ~= nil and score < 0 then
+      return math.huge
+    end
+    return score * boost
   end,
 }
 
@@ -32,9 +35,7 @@ vim.api.nvim_create_user_command("TaskoList", function()
       local path_to_task = vim.fs.joinpath(files_dir, task_file)
       local task = Store:get_task_from_path(path_to_task)
       if task ~= nil and tostring(task.is_completed) ~= "true" then
-        local has_provider_id = task.provider_id ~= nil
-        local display_string = (has_provider_id and "[P] " or "")
-          .. (task.title or task.description or "(no title, no description)")
+        local display_string = task.title or task.description or "(no title, no description)"
         return {
           value = path_to_task,
           display = task.priority .. " " .. display_string,
