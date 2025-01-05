@@ -4,21 +4,34 @@ local telescope_sorters = require "telescope.sorters"
 
 local generic_fuzzy_sorter = telescope_sorters.get_generic_fuzzy_sorter()
 local custom_sorter = telescope_sorters.Sorter:new {
-  scoring_function = function(prompt, ordinal, entry)
-    local entry_prio = tonumber(entry:match "^(%d+)") or 4
-    local boost = 1
+  scoring_function = function(entry, prompt, ordinal)
+    local entry_prio = utils.get_priority_from_ordinal(ordinal)
+    local penalty = 1
+    local due_date = utils.get_due_date_from_ordinal(ordinal)
+    if due_date == nil then
+      penalty = penalty + 100
+    else
+      local today = os.time()
+      local difference_in_days = utils.calculate_time_difference(due_date, today).days
+      if difference_in_days > 0 then
+        penalty = penalty + difference_in_days
+      end
+    end
+
     if prompt ~= nil and type(prompt) == "string" then
       local prompt_prio_raw = string.match(prompt, "^(%d+)") or 0
       local prompt_prio = tonumber(prompt_prio_raw)
       if entry_prio and prompt_prio and entry_prio > prompt_prio then
-        boost = 10
+        penalty = penalty + 100
       end
     end
-    local score = generic_fuzzy_sorter.scoring_function(prompt, ordinal, entry)
+
+    local score = generic_fuzzy_sorter.scoring_function(entry, prompt, ordinal)
+
     if prompt ~= nil and score < 0 then
       return math.huge
     end
-    return score * boost
+    return score + penalty
   end,
 }
 
@@ -35,11 +48,12 @@ vim.api.nvim_create_user_command("TaskoList", function()
       local path_to_task = vim.fs.joinpath(files_dir, task_file)
       local task = Store:get_task_from_path(path_to_task)
       if task ~= nil and tostring(task.is_completed) ~= "true" then
-        local display_string = task.title or task.description or "(no title, no description)"
+        local display_string = utils.get_display_string(task)
+        local ordinal = utils.to_ordinal(task)
         return {
           value = path_to_task,
-          display = task.priority .. " " .. display_string,
-          ordinal = task.priority .. " " .. display_string .. " " .. task.description .. " " .. task.id,
+          display = display_string,
+          ordinal = ordinal,
         }
       end
     end,

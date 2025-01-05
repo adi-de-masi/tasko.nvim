@@ -2,6 +2,57 @@ local Path = require "plenary.path"
 local utils = {}
 local random = math.random
 
+function utils.get_display_string(task)
+  return task.priority .. " " .. task.title or task.description or "(no title, no description)"
+end
+
+function utils.to_ordinal(task)
+  local display_string = utils.get_display_string(task)
+  return "--priority: "
+    .. task.priority
+    .. " --due: "
+    .. task.due
+    .. " "
+    .. display_string
+    .. " "
+    .. task.description
+    .. " "
+    .. task.id
+end
+
+function utils.get_due_date_from_ordinal(ordinal)
+  local date = string.match(ordinal, "--due:%s([%w%-]+)")
+  if date == nil then
+    return nil
+  end
+  return os.time {
+    year = tonumber(date:sub(1, 4)),
+    month = tonumber(date:sub(6, 7)),
+    day = tonumber(date:sub(9, 10)),
+  }
+end
+
+function utils.get_priority_from_ordinal(ordinal)
+  return tonumber(ordinal:match "--priority:%s(%d+)") or 4
+end
+
+function utils.calculate_time_difference(target_date, from_date)
+  -- Calculate the difference in seconds
+  local difference_in_seconds = target_date - from_date
+
+  -- Convert the difference to days, hours, and minutes
+  local days = math.floor(difference_in_seconds / (24 * 60 * 60))
+  local hours = math.floor((difference_in_seconds % (24 * 60 * 60)) / (60 * 60))
+  local minutes = math.floor((difference_in_seconds % (60 * 60)) / 60)
+
+  return {
+    days = days,
+    hours = hours,
+    minutes = minutes,
+    total_seconds = difference_in_seconds,
+  }
+end
+
 function utils.split_by_newline(str)
   local result = {}
   for line in str:gmatch "([^\n]*)\n?" do

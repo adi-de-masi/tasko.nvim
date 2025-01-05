@@ -63,11 +63,13 @@ end
 
 function tdst:to_task(todoist_response_body)
   local title = string.gsub((todoist_response_body["content"] or ""), "\n", "")
+  local due = todoist_response_body["due"] == vim.NIL and "" or todoist_response_body["due"]["date"]
   local task = Task:new(
     tonumber(todoist_response_body["id"]),
     title,
     todoist_response_body["description"],
     tonumber(todoist_response_body["priority"]),
+    due,
     todoist_response_body["is_completed"]
   )
   local provider_id = todoist_response_body["id"]
