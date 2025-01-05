@@ -27,7 +27,7 @@ local function _get_json_encoded_parameters(task)
     content = task.title,
     id = task.provider_id,
     description = task.description,
-    due_date = task.due,
+    due_string = (task.due ~= nil and task.due ~= "") and task.due or "no due date",
     priority = task.priority,
     is_completed = task.is_completed,
   }

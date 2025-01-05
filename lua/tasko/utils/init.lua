@@ -25,10 +25,16 @@ function utils.get_due_date_from_ordinal(ordinal)
   if date == nil then
     return nil
   end
+  local year = tonumber(date:sub(1, 4)) or nil
+  local month = tonumber(date:sub(6, 7)) or nil
+  local day = tonumber(date:sub(9, 10)) or nil
+  if year == nil or month == nil or day == nil then
+    return date
+  end
   return os.time {
-    year = tonumber(date:sub(1, 4)),
-    month = tonumber(date:sub(6, 7)),
-    day = tonumber(date:sub(9, 10)),
+    year = year,
+    month = month,
+    day = day,
   }
 end
 
@@ -37,6 +43,15 @@ function utils.get_priority_from_ordinal(ordinal)
 end
 
 function utils.calculate_time_difference(target_date, from_date)
+  if type(target_date) == "string" then
+    --TODO: Dynamically calculate the differences based on supported Todoist strings
+    return {
+      days = 100,
+      hours = 0,
+      minutes = 0,
+      total_seconds = 0,
+    }
+  end
   -- Calculate the difference in seconds
   local difference_in_seconds = target_date - from_date
 
