@@ -1,3 +1,4 @@
+local Task = require "tasko.task"
 local Store = require "tasko.store"
 local utils = require "tasko.utils"
 local telescope_sorters = require "telescope.sorters"

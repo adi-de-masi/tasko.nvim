@@ -22,10 +22,12 @@ local function _get_headers(hasJsonBody)
 end
 
 local function _get_json_encoded_parameters(task)
+  assert(task ~= nil, "task is nil")
   return vim.fn.json_encode {
     content = task.title,
     id = task.provider_id,
     description = task.description,
+    due_date = task.due,
     priority = task.priority,
     is_completed = task.is_completed,
   }
