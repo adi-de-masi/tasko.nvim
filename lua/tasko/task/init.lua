@@ -1,7 +1,7 @@
 local utils = require "tasko.utils"
 local Task = {}
 
-function Task:new(id, title, description, priority, is_completed)
+function Task:new(id, title, description, priority, due, is_completed)
   local o = {}
   setmetatable(o, self)
   self.__index = self
@@ -10,6 +10,7 @@ function Task:new(id, title, description, priority, is_completed)
   o.description = description or ""
   o.priority = priority or 4
   o.is_completed = is_completed or false
+  o.due = due or ""
   o.set_provider_id = function(provider_id)
     o.provider_id = provider_id
   end
@@ -33,6 +34,7 @@ function Task:new(id, title, description, priority, is_completed)
       "-- id: " .. o.id,
       "-- provider_id: " .. (o.provider_id or ""),
       "-- priority: " .. (o.priority or 4),
+      "-- due: " .. (vim.inspect(o.due) or ""),
       "-- is_completed: " .. tostring(o.is_completed or false),
     }
   end
@@ -51,7 +53,7 @@ end
 function Task:from_lines(lines_as_string)
   local task = Task:new()
   task.id = nil
-  local delimiter_regex = "^%-%-%s+([%w%-_]+):%s+(%w+)"
+  local delimiter_regex = '--%s*([%w_]+):%s*"?([%w%-]+)"?'
   local lines = utils.split_by_newline(lines_as_string)
   for index, line in ipairs(lines) do
     if index == 1 then
@@ -59,7 +61,7 @@ function Task:from_lines(lines_as_string)
     else
       local key, value = string.match(line, delimiter_regex)
       if key and value then
-        task[key] = value
+        task[key] = value or ""
       elseif string.match(line, "^%-.*") == nil and string.match(line, "^\n") == nil then
         task["description"] = (task["description"] or "") .. "\n" .. line
       end
