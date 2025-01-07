@@ -10,7 +10,7 @@ local custom_sorter = telescope_sorters.Sorter:new {
     local penalty = 1
     local due_date = utils.get_due_date_from_ordinal(ordinal)
     if due_date == nil then
-      penalty = penalty + 100
+      penalty = penalty + 1
     else
       local today = os.time()
       local difference_in_days = utils.calculate_time_difference(due_date, today).days
@@ -23,7 +23,7 @@ local custom_sorter = telescope_sorters.Sorter:new {
       local prompt_prio_raw = string.match(prompt, "^(%d+)") or 0
       local prompt_prio = tonumber(prompt_prio_raw)
       if entry_prio and prompt_prio and entry_prio > prompt_prio then
-        penalty = penalty + 100
+        penalty = penalty + 1
       end
     end
 
@@ -32,7 +32,7 @@ local custom_sorter = telescope_sorters.Sorter:new {
     if prompt ~= nil and score < 0 then
       return math.huge
     end
-    return score + penalty
+    return score * 100 + penalty
   end,
 }
 
