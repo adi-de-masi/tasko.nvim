@@ -132,6 +132,7 @@ end, {})
 vim.api.nvim_create_user_command("TaskoFetchAll", function()
   local provider = get_provider()
   local tasks = provider:query_all "tasks"
+  print("Fetched " .. #tasks .. " tasks")
   for _, value in ipairs(tasks) do
     local task = provider:to_task(value)
     Store:write(task)
