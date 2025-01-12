@@ -5,7 +5,7 @@ local tasko_base_dir = utils.get_or_create_tasko_directory()
 local Store = {}
 
 local get_task_file = function(task_id)
-  return Path:new(utils.get_or_create_tasko_directory(), task_id .. ".md")
+  return Path:new(utils.get_or_create_tasko_directory(), "tasko-" .. task_id .. ".md")
 end
 
 function Store:write(task)
