@@ -18,6 +18,7 @@ describe("text to task", function()
       .. "-- priority: 3\n"
       .. '-- due: "2025-01-03"\n'
       .. "-- is_completed: true\n"
+      .. "-- edited: 2025-01-03T23:00:00\n"
     local task = Task:from_lines(task_lines)
     assert(task.id == "1", "wrong id: " .. task.id)
     assert(task.provider_id == "123", "wrong provider_id")
@@ -26,6 +27,7 @@ describe("text to task", function()
     assert(task.priority == "3", "wrong priority")
     assert(task.due == "2025-01-03", "due not found")
     assert(task.is_completed == "true", "wrong is_completed")
+    assert(task.edited == "2025-01-03T23:00:00", "edited wrong: " .. task.edited)
   end)
 
   it("parses the due date", function()
