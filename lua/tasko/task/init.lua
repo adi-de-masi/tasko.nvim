@@ -1,7 +1,7 @@
 local utils = require "tasko.utils"
 local Task = {}
 
-function Task:new(id, title, description, priority, due, is_completed, edited)
+function Task:new(id, title, description, priority, due, is_completed, edited_time)
   local o = {}
   setmetatable(o, self)
   self.__index = self
@@ -11,7 +11,7 @@ function Task:new(id, title, description, priority, due, is_completed, edited)
   o.priority = priority or 4
   o.is_completed = is_completed or false
   o.due = due or ""
-  o.edited = edited or false
+  o.edited_time = edited_time or nil
   o.set_provider_id = function(provider_id)
     o.provider_id = provider_id
   end
@@ -30,7 +30,7 @@ function Task:new(id, title, description, priority, due, is_completed, edited)
     vim.api.nvim_buf_set_lines(buf, last_line + 1, last_line + 1, false, param_lines)
   end
   o.to_params_as_md_comment = function()
-    local ed = o.edited and ("-- edited: " .. o.edited) or nil
+    local ed = o.edited_time ~= nil and ("-- edited: " .. o.edited_time) or nil
     return {
       "---------------------",
       "-- id: " .. o.id,

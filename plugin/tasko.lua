@@ -80,14 +80,16 @@ vim.api.nvim_create_user_command("TaskoPush", function()
   assert(task ~= nil, filename .. " cannot be interpreted as task")
   local provider = get_provider()
   local config = require("tasko").config
+  local updated_task = nil
   if (config and config.provider) and (task.provider_id == nil or task.provider_id == "") then
-    local updated_task = provider:new_task(task)
-    local buf = vim.api.nvim_get_current_buf()
-    updated_task.to_buffer(buf)
-    vim.cmd "write"
+    updated_task = provider:new_task(task)
   else
-    provider:update(task)
+    updated_task = provider:update(task)
+    updated_task.edited_time = nil
   end
+  local buf = vim.api.nvim_get_current_buf()
+  updated_task.to_buffer(buf)
+  vim.cmd "write"
 end, {})
 
 vim.api.nvim_create_user_command("TaskoFetch", function()

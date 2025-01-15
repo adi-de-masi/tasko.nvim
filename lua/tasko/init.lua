@@ -23,7 +23,8 @@ function M.setup(user_config)
     callback = function()
       local current_date = os.date "!%Y-%m-%dT%H:%M:%SZ"
 
-      local edited_line_pattern = "^%-%- edited: %w"
+      local edited_line_pattern = "^%-%- edited_time: %w"
+      local updated_line_pattern = "^%-%- updated_time: %w"
 
       local buf_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
@@ -36,11 +37,17 @@ function M.setup(user_config)
       end
 
       if edited_line_index then
-        -- Replace the existing `--edited:` line with the new timestamp
-        vim.api.nvim_buf_set_lines(0, edited_line_index, edited_line_index + 1, true, { "-- edited: " .. current_date })
-      else
-        -- Add the `--edited:` line to the end of the file
-        vim.api.nvim_buf_set_lines(0, -1, -1, false, { "-- edited: " .. current_date })
+        -- Replace the existing `--edited_time:` line with the new timestamp
+        vim.api.nvim_buf_set_lines(
+          0,
+          edited_line_index,
+          edited_line_index + 1,
+          true,
+          { "-- edited_time: " .. current_date }
+        )
+      elseif edited_line_index and not updated_line_index then
+        -- Add the `--edited_time:` line to the end of the file
+        vim.api.nvim_buf_set_lines(0, -1, -1, false, { "-- edited_time: " .. current_date })
       end
     end,
   })

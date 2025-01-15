@@ -3,7 +3,8 @@ local utils = {}
 local random = math.random
 
 function utils.get_display_string(task)
-  return task.priority .. " " .. task.title or task.description or "(no title, no description)"
+  local edited_time = task.edited_time and "(edited) " or ""
+  return edited_time .. " " .. task.priority .. " " .. task.title or task.description or "(no title, no description)"
 end
 
 function utils.to_ordinal(task)
