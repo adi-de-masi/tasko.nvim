@@ -3,8 +3,12 @@ local utils = {}
 local random = math.random
 
 function utils.get_display_string(task)
-  local edited_time = task.edited_time and "(edited) " or ""
-  return edited_time .. " " .. task.priority .. " " .. task.title or task.description or "(no title, no description)"
+  local edited_time = task.edited_time ~= nil and "(edited) " or ""
+  return edited_time .. task.priority .. " " .. task.title
+    or task.description
+    or "(no title, no description)"
+    or task.description
+    or "(no title, no description)"
 end
 
 function utils.to_ordinal(task)
@@ -138,6 +142,22 @@ function utils.get_or_create_tasko_directory()
     tasko_dir_path:mkdir()
   end
   return tasko_dir
+end
+
+function utils.parse_iso8601(date_str)
+  local year, month, day, hour, min, sec = date_str:match "^(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)Z$"
+  if year and month and day and hour and min and sec then
+    return os.time {
+      year = tonumber(year),
+      month = tonumber(month),
+      day = tonumber(day),
+      hour = tonumber(hour),
+      min = tonumber(min),
+      sec = tonumber(sec),
+    }
+  else
+    error("Invalid date format: " .. date_str)
+  end
 end
 
 return utils

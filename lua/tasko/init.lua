@@ -1,4 +1,6 @@
 local M = {}
+local Task = require "tasko.task"
+local utils = require "tasko.utils"
 
 -- Default configuration
 M.default_config = {
@@ -23,32 +25,23 @@ function M.setup(user_config)
     callback = function()
       local current_date = os.date "!%Y-%m-%dT%H:%M:%SZ"
 
-      local edited_line_pattern = "^%-%- edited_time: %w"
-      local updated_line_pattern = "^%-%- updated_time: %w"
+      local task = Task:from_current_buffer()
 
-      local buf_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-
-      local edited_line_index = nil
-      for i, line in ipairs(buf_lines) do
-        if string.match(line, edited_line_pattern) ~= nil then
-          edited_line_index = i - 1
-          break
+      if task and task.edited_time and task.updated_time then
+        local edited = utils.parse_iso8601(task.edited_time)
+        local updated = utils.parse_iso8601(task.updated_time)
+        if updated >= edited then
+          task.edited_time = nil
+          task.updated_time = nil
         end
+      elseif task then
+        task.edited_time = current_date
+      else
+        debug = "No task found in the current buffer"
+        return
       end
-
-      if edited_line_index then
-        -- Replace the existing `--edited_time:` line with the new timestamp
-        vim.api.nvim_buf_set_lines(
-          0,
-          edited_line_index,
-          edited_line_index + 1,
-          true,
-          { "-- edited_time: " .. current_date }
-        )
-      elseif edited_line_index and not updated_line_index then
-        -- Add the `--edited_time:` line to the end of the file
-        vim.api.nvim_buf_set_lines(0, -1, -1, false, { "-- edited_time: " .. current_date })
-      end
+      local buf = vim.api.nvim_get_current_buf()
+      task.to_buffer(buf)
     end,
   })
 end

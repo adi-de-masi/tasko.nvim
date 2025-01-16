@@ -85,11 +85,11 @@ vim.api.nvim_create_user_command("TaskoPush", function()
     updated_task = provider:new_task(task)
   else
     updated_task = provider:update(task)
-    updated_task.edited_time = nil
   end
   local buf = vim.api.nvim_get_current_buf()
   updated_task.to_buffer(buf)
   vim.cmd "write"
+  print("Pushed task to provider: " .. updated_task.title .. " with id: " .. updated_task.provider_id)
 end, {})
 
 vim.api.nvim_create_user_command("TaskoFetch", function()

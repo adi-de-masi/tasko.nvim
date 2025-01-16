@@ -18,7 +18,7 @@ describe("text to task", function()
       .. "-- priority: 3\n"
       .. '-- due: "2025-01-03"\n'
       .. "-- is_completed: true\n"
-      .. "-- edited_time: 2025-01-03T23:00:00\n"
+      .. "-- edited_time: 2025-01-15T21:16:27Z\n"
     local task = Task:from_lines(task_lines)
     assert(task.id == "1", "wrong id: " .. task.id)
     assert(task.provider_id == "123", "wrong provider_id")
@@ -28,7 +28,7 @@ describe("text to task", function()
     assert(task.due == "2025-01-03", "due not found")
     assert(task.is_completed == "true", "wrong is_completed")
     assert(
-      task.edited_time == "2025-01-03T23:00:00",
+      task.edited_time == "2025-01-15T21:16:27Z",
       "edited wrong: " .. (task.edited_time and task.edited_time or "nil")
     )
   end)

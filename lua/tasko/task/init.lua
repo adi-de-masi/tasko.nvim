@@ -12,6 +12,7 @@ function Task:new(id, title, description, priority, due, is_completed, edited_ti
   o.is_completed = is_completed or false
   o.due = due or ""
   o.edited_time = edited_time or nil
+  o.updated_time = nil
   o.set_provider_id = function(provider_id)
     o.provider_id = provider_id
   end
@@ -30,7 +31,6 @@ function Task:new(id, title, description, priority, due, is_completed, edited_ti
     vim.api.nvim_buf_set_lines(buf, last_line + 1, last_line + 1, false, param_lines)
   end
   o.to_params_as_md_comment = function()
-    local ed = o.edited_time ~= nil and ("-- edited: " .. o.edited_time) or nil
     return {
       "---------------------",
       "-- id: " .. o.id,
@@ -38,7 +38,8 @@ function Task:new(id, title, description, priority, due, is_completed, edited_ti
       "-- priority: " .. (o.priority or 4),
       "-- due: " .. (vim.inspect(o.due) or ""),
       "-- is_completed: " .. tostring(o.is_completed or false),
-      ed,
+      "-- updated_time: " .. tostring(o.updated_time or ""),
+      "-- edited_time: " .. tostring(o.edited_time or ""),
     }
   end
   return o
@@ -66,7 +67,7 @@ function Task:from_lines(lines_as_string)
       if key and value then
         task[key] = value or ""
       elseif string.match(line, "^%-.*") == nil and string.match(line, "^\n") == nil then
-        task["description"] = (task["description"] or "") .. "\n" .. line
+        task["description"] = (task["description"] or "") .. line
       end
     end
   end

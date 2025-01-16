@@ -2,7 +2,7 @@ local utils = require "tasko.utils"
 local Task = require "tasko.task"
 
 describe("TaskoList utils", function()
-  it("get_display_string", function()
+  it("get_display_string without edited_time", function()
     local task = Task:new(1, "my title", "my description", 3, "2025-01-03", false)
     local display_string = utils.get_display_string(task)
     assert(display_string == "3 my title", "Display string not as expected: " .. display_string)
@@ -134,5 +134,12 @@ describe("replace_line", function()
     assert.is_equal("Apfelbaum 2", vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1])
     utils.replace_line(buf, 4, "Eiche 2")
     assert.is_equal("Eiche 2", vim.api.nvim_buf_get_lines(buf, 3, 4, false)[1])
+  end)
+end)
+
+describe("parse_iso8601", function()
+  it("parses an ISO8601 date", function()
+    local date = utils.parse_iso8601 "2025-01-03T12:00:00Z"
+    assert.is_equal(1735902000, date)
   end)
 end)
