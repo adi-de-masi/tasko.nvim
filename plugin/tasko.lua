@@ -128,6 +128,7 @@ vim.api.nvim_create_user_command("TaskoDone", function()
     provider:complete(task.provider_id)
     task.is_completed = true
     local buf = vim.api.nvim_get_current_buf()
+    task.updated_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
     task.to_buffer(buf)
     vim.cmd "write"
   end
