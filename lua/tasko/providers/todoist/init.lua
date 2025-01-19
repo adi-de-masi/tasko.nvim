@@ -140,7 +140,6 @@ function tdst:update(task)
   local body = _get_json_encoded_parameters(task)
   local response = post(TASKS_URL .. "/" .. task.provider_id, body)
   local updated_task = tdst:to_task(response)
-  updated_task.updated_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
   return updated_task
 end
 

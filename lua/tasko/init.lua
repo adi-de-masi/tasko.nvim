@@ -10,6 +10,25 @@ M.default_config = {
 -- Store the configuration
 M.config = {}
 
+local function reconcile(task)
+  local current_date = os.date "!%Y-%m-%dT%H:%M:%SZ"
+  if task then
+    task.edited_time = current_date
+  else
+    debug = "No task found in the current buffer"
+    return
+  end
+
+  if task and task.updated_time then
+    local edited = utils.parse_iso8601(task.edited_time)
+    local updated = utils.parse_iso8601(task.updated_time)
+    if updated >= edited then
+      task.edited_time = nil
+    end
+  end
+  return task
+end
+
 -- Setup function
 function M.setup(user_config)
   -- Merge user-provided config with the default config
@@ -23,25 +42,12 @@ function M.setup(user_config)
     group = augroup,
     pattern = "tasko-*.md",
     callback = function()
-      local current_date = os.date "!%Y-%m-%dT%H:%M:%SZ"
-
       local task = Task:from_current_buffer()
+      task = reconcile(task)
 
-      if task and task.edited_time and task.updated_time then
-        local edited = utils.parse_iso8601(task.edited_time)
-        local updated = utils.parse_iso8601(task.updated_time)
-        if updated >= edited then
-          task.edited_time = nil
-          task.updated_time = nil
-        end
-      elseif task then
-        task.edited_time = current_date
-      else
-        debug = "No task found in the current buffer"
-        return
-      end
       local buf = vim.api.nvim_get_current_buf()
       task.to_buffer(buf)
+      vim.cmd "write"
     end,
   })
 end

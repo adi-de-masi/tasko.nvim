@@ -74,9 +74,11 @@ local function get_provider()
 end
 
 vim.api.nvim_create_user_command("TaskoPush", function()
-  local filename = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+  local current_buffer = vim.api.nvim_get_current_buf()
+  local filename = vim.api.nvim_buf_get_name(current_buffer)
+  local task = Task:from_current_buffer()
+  task.edited_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
 
-  local task = Store:get_task_from_path(filename)
   assert(task ~= nil, filename .. " cannot be interpreted as task")
   local provider = get_provider()
   local config = require("tasko").config
@@ -86,8 +88,8 @@ vim.api.nvim_create_user_command("TaskoPush", function()
   else
     updated_task = provider:update(task)
   end
-  local buf = vim.api.nvim_get_current_buf()
-  updated_task.to_buffer(buf)
+  updated_task.updated_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
+  updated_task.to_buffer(current_buffer)
   vim.cmd "write"
   print("Pushed task to provider: " .. updated_task.title .. " with id: " .. updated_task.provider_id)
 end, {})
