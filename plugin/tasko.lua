@@ -134,6 +134,21 @@ vim.api.nvim_create_user_command("TaskoDone", function()
   end
 end, {})
 
+vim.api.nvim_create_user_command("TaskoReopen", function()
+  local task = Task:from_current_buffer()
+  if task ~= nil then
+    local provider = get_provider()
+    provider:reopen(task.provider_id)
+    task.is_completed = false
+    local buf = vim.api.nvim_get_current_buf()
+    task.updated_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
+    task.to_buffer(buf)
+    vim.cmd "write"
+  else
+    print "Task is not completed"
+  end
+end, {})
+
 vim.api.nvim_create_user_command("TaskoFetchAll", function()
   local provider = get_provider()
   local tasks = provider:query_all "tasks"

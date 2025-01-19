@@ -118,6 +118,20 @@ function tdst:complete(id)
   print "marked task as done"
 end
 
+--- @param id string
+function tdst:reopen(id)
+  local status = nil
+  local callback = function(res)
+    status = res.status
+  end
+  local headers = _get_headers(false)
+  local url = TASKS_URL .. "/" .. id .. "/reopen"
+  local job = curl.post(url, { headers = headers, callback = callback })
+  job:wait()
+  assert(status < 300, "Todoist did not answer with 200")
+  print "marked task as reopened"
+end
+
 function tdst:new_task(task)
   local response = {}
   local status = nil
