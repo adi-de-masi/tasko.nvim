@@ -7,7 +7,7 @@ local generic_fuzzy_sorter = telescope_sorters.get_generic_fuzzy_sorter()
 local custom_sorter = telescope_sorters.Sorter:new {
   scoring_function = function(entry, prompt, ordinal)
     local entry_prio = utils.get_priority_from_ordinal(ordinal)
-    local penalty = 1
+    local penalty = tonumber(entry_prio)
     local due_date = utils.get_due_date_from_ordinal(ordinal)
     if due_date == nil then
       penalty = penalty + 1
@@ -153,8 +153,7 @@ vim.api.nvim_create_user_command("TaskoFetchAll", function()
   local provider = get_provider()
   local tasks = provider:query_all "tasks"
   print("Fetched " .. #tasks .. " tasks")
-  for _, value in ipairs(tasks) do
-    local task = provider:to_task(value)
+  for _, task in ipairs(tasks) do
     Store:write(task)
   end
 end, {})

@@ -5,6 +5,17 @@ local PROJECTS_URL = "https://api.todoist.com/rest/v2/projects"
 
 local tdst = {}
 
+local todoist_to_tasko_priority = {
+  ["1"] = 4,
+  ["2"] = 3,
+  ["3"] = 2,
+  ["4"] = 1,
+}
+
+function tdst:map_priority(priority)
+  return todoist_to_tasko_priority[tostring(priority)]
+end
+
 local function get_api_key()
   local token = os.getenv "TODOIST_API_KEY"
   assert(token ~= nil, "Failed to initialize Todoist - TODOIST_API_KEY not set")
@@ -28,7 +39,7 @@ local function _get_json_encoded_parameters(task)
     id = task.provider_id,
     description = task.description,
     due_string = (task.due ~= nil and task.due ~= "") and task.due or "no due date",
-    priority = task.priority,
+    priority = tdst:map_priority(task.priority),
     is_completed = task.is_completed,
   }
 end
@@ -70,7 +81,7 @@ function tdst:to_task(todoist_response_body)
     tonumber(todoist_response_body["id"]),
     title,
     todoist_response_body["description"],
-    tonumber(todoist_response_body["priority"]),
+    tonumber(tdst:map_priority(todoist_response_body["priority"])),
     due,
     todoist_response_body["is_completed"]
   )
@@ -96,6 +107,10 @@ function tdst:query_all(type)
   end
   job:wait()
   assert(status == 200, "Todoist did not answer with 200")
+  local tasks = {}
+  for _, value in ipairs(response) do
+    table.insert(tasks, self:to_task(value))
+  end
   return response
 end
 
@@ -145,7 +160,7 @@ function tdst:new_task(task)
   job:wait()
   assert(status == 200, "Todoist did not answer with 200")
   task.set_provider_id(response["id"])
-  task.priority = response["priority"]
+  task.priority = todoist_to_tasko_priority[response["priority"]]
   print("Successfully created task " .. task.provider_id)
   return task
 end
