@@ -10,12 +10,11 @@ Lazy:
 ```lua
 return {
   'adi-de-masi/tasko.nvim',
-  lazy = false,
   dependencies = {
     { 'nvim-lua/plenary.nvim' },
     { 'nvim-telescope/telescope.nvim' },
   },
-  -- optional, so far only todoist or local are supported
+  -- optional, if omitted tasks will be stored locally in ~/.local/share/nvim/tasko
   config = function()
     require('tasko').setup {
       provider = 'todoist', -- requirement: set environment variable TODOIST_API_KEY
