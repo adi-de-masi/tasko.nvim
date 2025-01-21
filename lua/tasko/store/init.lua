@@ -10,7 +10,7 @@ end
 
 function Store:write(task)
   local task_file = get_task_file(task.id)
-  local title_and_description = "# " .. task.title
+  local title_and_description = "# " .. (task.title or "(no title)")
   if task.description and task.description ~= "" then
     if string.find(task.description, "^\n") == 1 then
       title_and_description = title_and_description .. task.description

@@ -90,33 +90,18 @@ function tdst:to_task(todoist_response_body)
   return task
 end
 
-function tdst:query_all(type)
-  local job
+function tdst:query_all_tasks()
   local response = {}
-  local status = nil
-  local callback = function(res)
-    status = res.status
-    response = vim.json.decode(res["body"])
-  end
-  if type == "tasks" then
-    return exec_curl("get", TASKS_URL)
-  elseif type == "projects" then
-    job = self:query_projects(callback)
-  else
-    return nil
-  end
-  job:wait()
-  assert(status == 200, "Todoist did not answer with 200")
-  local tasks = {}
-  for _, value in ipairs(response) do
-    table.insert(tasks, self:to_task(value))
+  local tasks = exec_curl("get", TASKS_URL)
+  for _, value in ipairs(tasks) do
+    table.insert(response, tdst:to_task(value))
   end
   return response
 end
 
 function tdst:get_task_by_id(id)
   local todoist_response = exec_curl("get", vim.fs.joinpath(TASKS_URL, id))
-  return self:to_task(todoist_response)
+  return tdst:to_task(todoist_response)
 end
 
 --- @param id string
