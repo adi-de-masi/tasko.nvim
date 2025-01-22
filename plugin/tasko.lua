@@ -36,8 +36,42 @@ local custom_sorter = telescope_sorters.Sorter:new {
   end,
 }
 
-vim.api.nvim_create_user_command("TaskoList", function()
-  local opts = {}
+local default_entry_maker = function(task_file)
+  local files_dir = utils.get_or_create_tasko_directory()
+  local path_to_task = vim.fs.joinpath(files_dir, task_file)
+  local task = Store:get_task_from_path(path_to_task)
+  if task ~= nil and tostring(task.is_completed) ~= "true" then
+    local display_string = utils.get_display_string(task)
+    local ordinal = utils.to_ordinal(task)
+    return {
+      value = path_to_task,
+      display = display_string,
+      ordinal = ordinal,
+    }
+  end
+end
+
+local today_entry_maker = function(task_file)
+  local files_dir = utils.get_or_create_tasko_directory()
+  local path_to_task = vim.fs.joinpath(files_dir, task_file)
+  local task = Store:get_task_from_path(path_to_task)
+  local today = utils.get_today()
+  if task ~= nil and task.is_completed ~= "true" and task.due ~= "" and task.due <= today then
+    local display_string = utils.get_display_string(task)
+    local ordinal = utils.to_ordinal(task)
+    return {
+      value = path_to_task,
+      display = display_string,
+      ordinal = ordinal,
+    }
+  end
+end
+
+vim.api.nvim_create_user_command("TaskoList", function(opts)
+  local entry_maker = default_entry_maker
+  if (opts.args == "today") then
+    entry_maker = today_entry_maker
+  end
 
   local files_dir = utils.get_or_create_tasko_directory()
   require("telescope.builtin").find_files {
@@ -45,21 +79,10 @@ vim.api.nvim_create_user_command("TaskoList", function()
     hidden = opts.hidden or false,
     no_ignore = opts.no_ignore or true,
     sorter = custom_sorter,
-    entry_maker = function(task_file)
-      local path_to_task = vim.fs.joinpath(files_dir, task_file)
-      local task = Store:get_task_from_path(path_to_task)
-      if task ~= nil and tostring(task.is_completed) ~= "true" then
-        local display_string = utils.get_display_string(task)
-        local ordinal = utils.to_ordinal(task)
-        return {
-          value = path_to_task,
-          display = display_string,
-          ordinal = ordinal,
-        }
-      end
-    end,
-  }
-end, {})
+    entry_maker = entry_maker }
+end, {
+  nargs = "?", --0 or 1 arguments are allowed
+})
 
 local function get_provider()
   local config = require("tasko").config

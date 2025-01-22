@@ -41,11 +41,11 @@ as such:
 -- id: an-id-3524
 -- priority: 1
 ```
-
+- `TaskoList` Displays all tasks you haven't completed yet. Options: `today` = shows only tasks you marked as due today or that are already overdue.
 - `TaskoNew` Creates a new task locally. The new markdown file is written to disk with the title you gave.
 - `TaskoPush` Optional for users who like to send their tasks to an upstream service like Todoist. The current buffer must be a tasko task.
 - `TaskoFetch` Overrides the current task with the version that's stored on the provider side.
-- `TaskoFetchAll` Fetches all tasks from the provider.
+- `TaskoFetchAll` Fetches all open tasks from the provider.
 - `TaskoDone` Marks a task as done. Remark: Updating the `-- is_completed: true|false` meta information has no effect on the provider.
 
 

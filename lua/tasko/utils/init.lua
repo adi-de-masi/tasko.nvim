@@ -24,6 +24,9 @@ function utils.to_ordinal(task)
     .. " "
     .. task.id
 end
+function utils.get_today()
+  return os.date "%Y-%m-%d"
+end
 
 local function date_to_os_time(date_string)
   local year = tonumber(date_string:sub(1, 4)) or nil
