@@ -25,22 +25,29 @@ function utils.to_ordinal(task)
     .. task.id
 end
 
-function utils.get_due_date_from_ordinal(ordinal)
-  local date = string.match(ordinal, "--due:%s([%w%-]+)")
-  if date == nil then
-    return nil
-  end
-  local year = tonumber(date:sub(1, 4)) or nil
-  local month = tonumber(date:sub(6, 7)) or nil
-  local day = tonumber(date:sub(9, 10)) or nil
+local function date_to_os_time(date_string)
+  local year = tonumber(date_string:sub(1, 4)) or nil
+  local month = tonumber(date_string:sub(6, 7)) or nil
+  local day = tonumber(date_string:sub(9, 10)) or nil
   if year == nil or month == nil or day == nil then
-    return date
+    return date_string
   end
   return os.time {
     year = year,
     month = month,
     day = day,
   }
+end
+
+function utils.get_due_date_from_ordinal(ordinal)
+  local date = string.match(ordinal, "--due:%s([%w%-]+)")
+  if date == nil then
+    return nil
+  end
+  local date_string = date.match(date, "%d%d%d%d%-%d%d%-%d%d")
+  if date_string ~= nil then
+    return date_to_os_time(date_string)
+  end
 end
 
 function utils.get_priority_from_ordinal(ordinal)
