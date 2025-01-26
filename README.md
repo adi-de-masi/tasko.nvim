@@ -24,8 +24,8 @@ return {
 ```
 ## How it works and how to use it
 
-Tasko stores all tasks as markdown files in a subdirectory of `vim.fn.stdpath("data")` 
-which resolves to `~/.local/share/nvim` on unix systems.
+Tasko stores all tasks as markdown files in a subdirectory of `vim.fn.stdpath("data")`,
+typically resolving to `~/.local/share/nvim/tasko`  on unix systems.
 
 These markdown files have the following format:
 
@@ -37,16 +37,23 @@ Anything below = description.
 Important: Somewhere in the file, ideally at the end, you need the task metadata formatted
 as such:
 
--- key: value
--- id: an-id-3524
+-- id: 
+-- provider_id: 
 -- priority: 1
+-- due: "2024-11-23"
+-- is_completed: false
+-- updated_time: 
+-- edited_time: 
 ```
 - `TaskoList` Displays all tasks you haven't completed yet. Options: `today` = shows only tasks you marked as due today or that are already overdue.
-- `TaskoNew` Creates a new task locally. The new markdown file is written to disk with the title you gave.
-- `TaskoPush` Optional for users who like to send their tasks to an upstream service like Todoist. The current buffer must be a tasko task.
+- `TaskoNew` Creates a new task locally. The new markdown file is written to disk with the title you gave. To sync it, use `TaskoPush`
+- `TaskoPush` When editing a task, this command will send the updates to the server.
 - `TaskoFetch` Overrides the current task with the version that's stored on the provider side.
-- `TaskoFetchAll` Fetches all open tasks from the provider.
-- `TaskoDone` Marks a task as done. Remark: Updating the `-- is_completed: true|false` meta information has no effect on the provider.
+- `TaskoFetchAll` Fetches all open tasks from the provider, overriding all local tasks.
+- `TaskoSyncAll` Synchronizes your tasks with the server as follows: Fetches new tasks and overrides unedited local tasks with the server state.
+Pushes new and edited tasks to the server.
+- `TaskoDone` Marks a task both locally and server-side as done. Remark: Updating the `-- is_completed: true|false` meta information has no effect on the provider.
+- `TaskoReopen` Reopens a closed task both locally and server-side.
 
 
 ## Contributing
