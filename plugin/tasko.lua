@@ -133,6 +133,50 @@ vim.api.nvim_create_user_command("TaskoFetch", function()
   end
 end, {})
 
+vim.api.nvim_create_user_command("TaskoSyncAll", function()
+  -- Get all tasks
+  local provider = get_provider()
+  local active_tasks_from_provider = provider:query_all_tasks()
+  local local_tasks = Store:all_local_tasks_table()
+  local fetched = 0
+  local updated = 0
+  local created = 0
+
+  for _, task_from_provider in ipairs(active_tasks_from_provider) do
+    local local_task = local_tasks[task_from_provider.provider_id]
+    if local_task == nil then
+      Store:write(task_from_provider)
+      fetched = fetched + 1
+    elseif local_task.edited_time == nil then
+      Store:write(task_from_provider)
+      fetched = fetched + 1
+      table.remove(local_tasks, local_task.provider_id)
+    elseif local_task.edited_time ~= nil then
+      provider:update(local_task)
+      local_task.updated_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
+      local_task.edited_time = nil
+      Store:write(local_task)
+      updated = updated + 1
+      table.remove(local_tasks, local_task.provider_id)
+    end
+  end
+
+  for _, local_task in pairs(local_tasks) do
+    if local_task.provider_id == nil then
+      local new_task = provider:new_task(local_task)
+      Store:write(new_task)
+      Store:delete(local_task.id)
+      created = created + 1
+    else
+      local updated_task = provider:get_task_by_id(local_task.provider_id)
+      Store:write(updated_task)
+      fetched = fetched + 1
+    end
+  end
+
+  print("Fetched " .. fetched .. ", created " .. created .. " and updated " .. updated .. " tasks")
+end, {})
+
 vim.api.nvim_create_user_command("TaskoNew", function()
   vim.ui.input({ prompt = "Task Title: " }, function(input)
     local task = Task:new()
