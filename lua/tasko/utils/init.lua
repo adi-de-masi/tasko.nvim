@@ -3,7 +3,7 @@ local utils = {}
 local random = math.random
 
 function utils.get_display_string(task)
-  local edited_time = task.edited_time ~= nil and "(edited) " or ""
+  local edited_time = task.edited_time ~= "" and "(edited) " or ""
   return edited_time .. task.priority .. " " .. task.title
     or task.description
     or "(no title, no description)"
