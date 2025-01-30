@@ -1,5 +1,5 @@
 local Path = require "plenary.path"
-local scan = require 'plenary.scandir'
+local scan = require "plenary.scandir"
 local Task = require "tasko.task"
 local utils = require "tasko.utils"
 local tasko_base_dir = utils.get_or_create_tasko_directory()
@@ -15,8 +15,9 @@ function Store:write(task)
   if task.description and task.description ~= "" then
     if string.find(task.description, "^\n") == 1 then
       title_and_description = title_and_description .. task.description
+    else
+      title_and_description = title_and_description .. "\n" .. task.description
     end
-    title_and_description = title_and_description .. "\n" .. task.description
   end
   local task_params = task.to_params_as_md_comment()
   task_file:write(title_and_description .. "\n" .. table.concat(task_params, "\n"), "w")

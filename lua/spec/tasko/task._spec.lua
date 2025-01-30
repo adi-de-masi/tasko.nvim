@@ -25,7 +25,7 @@ describe("text to task", function()
     assert(task.title == "title for this test", "wrong title")
     assert(task.description:gsub("\n", "") == "A task description example", "wrong description: " .. task.description)
     assert(task.priority == "3", "wrong priority")
-    assert(task.due == "2025-01-03", "due not found")
+    assert(task.due == '"2025-01-03"', "due wrong: [" .. task.due .. "]")
     assert(task.is_completed == "true", "wrong is_completed")
     assert(
       task.edited_time == "2025-01-15T21:16:27Z",
