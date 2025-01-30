@@ -57,7 +57,7 @@ end
 function Task:from_lines(lines_as_string)
   local task = Task:new()
   task.id = nil
-  local delimiter_regex = '--%s*([%w_]+):%s*"?([%w%-:+]+)"?'
+  local delimiter_regex = "--%s*([%w_]+):%s*(.*)"
   local lines = utils.split_by_newline(lines_as_string)
   for index, line in ipairs(lines) do
     if index == 1 then
