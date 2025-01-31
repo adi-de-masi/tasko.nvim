@@ -3,7 +3,7 @@ local utils = {}
 local random = math.random
 
 function utils.get_display_string(task)
-  local edited_time = task.edited_time ~= "" and "(edited) " or ""
+  local edited_time = (task.edited_time ~= nil and task.edited_time ~= "") and "(edited) " or ""
   return edited_time .. task.priority .. " " .. task.title
     or task.description
     or "(no title, no description)"
@@ -16,7 +16,7 @@ function utils.to_ordinal(task)
   return "--priority: "
     .. task.priority
     .. " --due: "
-    .. task.due
+    .. (task.due or "")
     .. " "
     .. display_string
     .. " "
@@ -24,6 +24,7 @@ function utils.to_ordinal(task)
     .. " "
     .. task.id
 end
+
 function utils.get_today()
   return os.date "%Y-%m-%d"
 end

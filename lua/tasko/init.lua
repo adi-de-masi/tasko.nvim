@@ -19,7 +19,7 @@ local function reconcile(task)
     return
   end
 
-  if task and task.updated_time then
+  if task and task.updated_time and task.updated_time ~= "" then
     local edited = utils.parse_iso8601(task.edited_time)
     local updated = utils.parse_iso8601(task.updated_time)
     if updated >= edited then

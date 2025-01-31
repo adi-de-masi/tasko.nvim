@@ -10,15 +10,15 @@ describe("text to task", function()
 
   it("creates a task from lines", function()
     local task_lines = "# title for this test\n"
-      .. "\n"
-      .. "A task description example\n"
-      .. "---------------------\n"
-      .. "-- id: 1\n"
-      .. "-- provider_id: 123\n"
-      .. "-- priority: 3\n"
-      .. '-- due: "2025-01-03"\n'
-      .. "-- is_completed: true\n"
-      .. "-- edited_time: 2025-01-15T21:16:27Z\n"
+        .. "\n"
+        .. "A task description example\n"
+        .. "---------------------\n"
+        .. "-- id: 1\n"
+        .. "-- provider_id: 123\n"
+        .. "-- priority: 3\n"
+        .. '-- due: "2025-01-03"\n'
+        .. "-- is_completed: true\n"
+        .. "-- edited_time: 2025-01-15T21:16:27Z\n"
     local task = Task:from_lines(task_lines)
     assert(task.id == "1", "wrong id: " .. task.id)
     assert(task.provider_id == "123", "wrong provider_id")
@@ -35,14 +35,14 @@ describe("text to task", function()
 
   it("parses the due date", function()
     local task_lines = "# title for this test\n"
-      .. "\n"
-      .. "A task description example\n"
-      .. "---------------------\n"
-      .. "-- id: 1\n"
-      .. "-- provider_id: 123\n"
-      .. "-- priority: 3\n"
-      .. '-- due: "2025-01-03"\n'
-      .. "-- is_completed: true\n"
+        .. "\n"
+        .. "A task description example\n"
+        .. "---------------------\n"
+        .. "-- id: 1\n"
+        .. "-- provider_id: 123\n"
+        .. "-- priority: 3\n"
+        .. '-- due: "2025-01-03"\n'
+        .. "-- is_completed: true\n"
 
     local delimiter_regex = '--%s*(%w+):%s*"?([%w%-]+)"?'
     local result = nil

@@ -10,7 +10,7 @@ function Task:new(id, title, description, priority, due, is_completed, edited_ti
   o.description = description or ""
   o.priority = priority or 4
   o.is_completed = is_completed or false
-  o.due = due or ""
+  o.due = due or nil
   o.edited_time = edited_time or nil
   o.updated_time = nil
   o.set_provider_id = function(provider_id)
@@ -36,7 +36,7 @@ function Task:new(id, title, description, priority, due, is_completed, edited_ti
       "-- id: " .. o.id,
       "-- provider_id: " .. (o.provider_id or ""),
       "-- priority: " .. (o.priority or 4),
-      "-- due: " .. (vim.inspect(o.due) or ""),
+      "-- due: " .. (o.due or ""),
       "-- is_completed: " .. tostring(o.is_completed or false),
       "-- updated_time: " .. tostring(o.updated_time or ""),
       "-- edited_time: " .. tostring(o.edited_time or ""),
