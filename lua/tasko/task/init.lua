@@ -57,7 +57,7 @@ end
 function Task:from_lines(lines_as_string)
   local task = Task:new()
   task.id = nil
-  local delimiter_regex = "--%s*([%w_]+):%s*(.*)"
+  local delimiter_regex = "--%s*([%w_]+):%s*(.*)$"
   local lines = utils.split_by_newline(lines_as_string)
   for index, line in ipairs(lines) do
     if index == 1 then
@@ -65,8 +65,8 @@ function Task:from_lines(lines_as_string)
     else
       local key, value = string.match(line, delimiter_regex)
       if key and value then
-        task[key] = value or ""
-      elseif string.match(line, "^%-.*") == nil and string.match(line, "^%s*$") == nil then
+        task[key] = value or nil
+      elseif string.match(line, "^%-%-.*") == nil and string.match(line, "^%s*$") == nil then
         task["description"] = (task["description"] or "") .. "\n" .. line
       end
     end
