@@ -152,9 +152,10 @@ vim.api.nvim_create_user_command("TaskoSyncAll", function()
       fetched = fetched + 1
       table.remove(local_tasks, local_task.provider_id)
     elseif local_task.edited_time ~= nil then
-      provider:update(local_task)
+      provider:update(task_from_provider)
       local_task.updated_time = os.date "!%Y-%m-%dT%H:%M:%SZ"
       local_task.edited_time = nil
+      local_task.provider_id = task_from_provider.provider_id
       Store:write(local_task)
       updated = updated + 1
       table.remove(local_tasks, local_task.provider_id)

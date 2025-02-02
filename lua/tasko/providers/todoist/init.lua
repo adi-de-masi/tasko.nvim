@@ -94,7 +94,9 @@ function tdst:query_all_tasks()
   local response = {}
   local tasks = exec_curl("get", TASKS_URL)
   for _, value in ipairs(tasks) do
-    table.insert(response, tdst:to_task(value))
+    local task = tdst:to_task(value)
+    task.set_provider_id(value.id)
+    table.insert(response, task)
   end
   return response
 end
@@ -151,6 +153,7 @@ function tdst:new_task(task)
 end
 
 function tdst:update(task)
+  assert(task.provider_id ~= nil, "task.provider_id is nil")
   local body = _get_json_encoded_parameters(task)
   local response = post(TASKS_URL .. "/" .. task.provider_id, body)
   local updated_task = tdst:to_task(response)
