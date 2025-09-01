@@ -5,6 +5,8 @@ local telescope_sorters = require "telescope.sorters"
 
 local generic_fuzzy_sorter = telescope_sorters.get_generic_fuzzy_sorter()
 local custom_sorter = telescope_sorters.Sorter:new {
+  -- For more information on the scoring_function and sorters in Telescope, refer to the official Telescope documentation:
+  -- https://github.com/nvim-telescope/telescope.nvim#telescope-nvim
   scoring_function = function(entry, prompt, ordinal)
     local entry_prio = utils.get_priority_from_ordinal(ordinal)
     local penalty = tonumber(entry_prio)

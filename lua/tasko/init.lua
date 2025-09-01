@@ -15,7 +15,6 @@ local function reconcile(task)
   if task then
     task.edited_time = current_date
   else
-    debug = "No task found in the current buffer"
     return
   end
 
